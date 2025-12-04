@@ -64,7 +64,6 @@
       <div id="view-list" style="display:none;">
         <h2 style="margin:0 0 8px 0">Сохранённые слова</h2>
         <div id="list" class="list"></div>
-        <p class="small">Обновите страницу для перезагрузки списка.</p>
       </div>
 
       <!-- TRAIN -->
@@ -86,23 +85,18 @@
 
     <aside class="card" style="height:fit-content;">
       <h3 style="margin:0 0 8px 0">Информация</h3>
-    
       <hr/>
       <p class="small"><b>Всего слов:</b> <span id="count">0</span></p>
     </aside>
   </main>
 
-  <footer>
-  
-  </footer>
+  <footer></footer>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-// ====== ЗАМЕНИТЕ НА СВОЙ CONFIG ======
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
   authDomain: "englishwords-d601c.firebaseapp.com",
@@ -143,163 +137,184 @@ const nextBtn = document.getElementById('nextBtn');
 let trainWords = [];
 let currentIndex = 0;
 
-// ====== UI переключение ======
+// ====== ПЕРЕКЛЮЧЕНИЕ UI ======
 function showView(name){
   viewAdd.style.display = name==='add' ? '' : 'none';
   viewList.style.display = name==='list' ? '' : 'none';
   viewTrain.style.display = name==='train' ? '' : 'none';
-  if(name==='list') loadWords();
 }
 
 btnAdd.addEventListener('click', ()=> showView('add'));
 btnList.addEventListener('click', ()=> showView('list'));
 btnTrain.addEventListener('click', ()=> startTraining());
 
-clearBtn.addEventListener('click', ()=> { inputWord.value=''; inputTranslation.value=''; });
+clearBtn.addEventListener('click', ()=> { 
+  inputWord.value=''; 
+  inputTranslation.value=''; 
+});
 
-// ====== CRUD ======
+// ====== ЖИВОЕ ОБНОВЛЕНИЕ СПИСКА И СЧЁТЧИКА ======
+onValue(wordsRef, snapshot => {
+  const data = snapshot.val();
+  listEl.innerHTML=''; 
+  trainWords=[];
+  let count = 0;
+
+  if(data){
+    const items = Object.entries(data).sort((a,b)=> b[1].createdAt - a[1].createdAt);
+
+    items.forEach(([id, item])=>{
+      const div = document.createElement('div');
+      div.className = 'word-item';
+
+      div.innerHTML = `
+        <div>
+          <div class="word-text">${escapeHtml(item.word)}</div>
+          <div class="word-sub">${escapeHtml(item.translation)}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="small">${new Date(item.createdAt).toLocaleString()}</div>
+          <button style="background:var(--danger); color:#fff; border:none; border-radius:6px; padding:4px 8px; cursor:pointer;"
+            onclick="deleteWord('${id}')">❌</button>
+        </div>
+      `;
+
+      listEl.appendChild(div);
+      trainWords.push(item);
+      count++;
+    });
+  }
+
+  countEl.textContent = count;
+});
+
+// ====== УДАЛЕНИЕ ======
+window.deleteWord = async (id)=>{
+  if(!confirm('Удалить это слово?')) return;
+  try{ 
+    await remove(ref(db,'englishwords/'+id)); 
+  }catch(err){ 
+    alert('Ошибка при удалении: '+err.message); 
+  }
+};
+
+// ====== СОХРАНЕНИЕ С ПРОВЕРКОЙ НА ДУБЛИ ======
 saveBtn.addEventListener('click', async ()=>{
   const word = inputWord.value.trim().toLowerCase();
   const translation = inputTranslation.value.trim();
-  if(!word || !translation){ 
-    alert('Заполните оба поля'); 
-    return; 
+
+  if(!word || !translation){
+    alert('Заполните оба поля');
+    return;
   }
 
-  saveBtn.disabled = true; 
-  saveBtn.textContent = 'Проверяю…';
+  saveBtn.disabled = true;
+  saveBtn.textContent = "Проверяю…";
 
   try {
-    // Загружаем существующие слова
     const snapshot = await new Promise(resolve => 
       onValue(wordsRef, resolve, { onlyOnce: true })
     );
 
     const data = snapshot.val() || {};
 
-    // Проверка на дубликат
     const duplicate = Object.values(data)
       .some(item => item.word.toLowerCase() === word);
 
     if(duplicate){
-      alert("Это слово уже существует в базе!");
-      saveBtn.disabled = false;
-      saveBtn.textContent = 'Сохранить';
+      alert("Это слово уже есть в базе!");
+      saveBtn.disabled=false;
+      saveBtn.textContent="Сохранить";
       return;
     }
 
-    // Если дубля нет — сохраняем
-    await push(wordsRef, { 
-      word, 
-      translation, 
-      createdAt: Date.now() 
+    await push(wordsRef, {
+      word,
+      translation,
+      createdAt: Date.now()
     });
 
-    inputWord.value=''; 
+    inputWord.value='';
     inputTranslation.value='';
 
-  } catch(err){
-    alert('Ошибка при сохранении: '+err.message);
-    console.error(err);
-
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Сохранить';
+  }catch(err){
+    alert("Ошибка: " + err.message);
   }
+
+  saveBtn.disabled=false;
+  saveBtn.textContent="Сохранить";
 });
 
-
-// ====== Загрузка слов ======
-function loadWords(){
-  onValue(wordsRef, snapshot=>{
-    const data = snapshot.val();
-    listEl.innerHTML=''; 
-    let count = 0;
-    trainWords = [];
-
-    if(data){
-      const items = Object.entries(data).sort((a,b)=> b[1].createdAt - a[1].createdAt);
-      items.forEach(([id, item])=>{
-        const div = document.createElement('div');
-        div.className='word-item';
-        div.innerHTML = `
-          <div>
-            <div class="word-text">${escapeHtml(item.word)}</div>
-            <div class="word-sub">${escapeHtml(item.translation)}</div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <div class="small">${new Date(item.createdAt).toLocaleString()}</div>
-            <button style="background:var(--danger); color:#fff; border:none; border-radius:6px; padding:4px 8px; cursor:pointer;" onclick="deleteWord('${id}')">❌</button>
-          </div>`;
-
-        listEl.appendChild(div);
-        trainWords.push(item);
-        count++;
-      });
-    }
-
-    countEl.textContent = count;
-});
-// ====== Удаление ======
-window.deleteWord = async (id)=>{
-  if(!confirm('Удалить это слово?')) return;
-  try{ await remove(ref(db,'englishwords/'+id)); } 
-  catch(err){ alert('Ошибка при удалении: '+err.message); console.error(err);}
-}
-
-// ====== Тренировка ======
+// ====== ТРЕНИРОВКА ======
 function startTraining(){
-  if(trainWords.length===0){ alert('Нет слов для тренировки'); return; }
+  if(trainWords.length===0){
+    alert("Нет слов для тренировки");
+    return;
+  }
+
   shuffle(trainWords);
-  currentIndex=0;
+  currentIndex = 0;
   showView('train');
   loadTrainingWord();
 }
 
 function loadTrainingWord(){
   const w = trainWords[currentIndex];
-  trainWordEl.textContent = w.word || '';
-  answerEl.value=''; resultEl.textContent=''; nextBtn.style.display='none';
+  trainWordEl.textContent = w.word;
+  answerEl.value = '';
+  resultEl.textContent='';
+  nextBtn.style.display='none';
 }
 
 checkBtn.addEventListener('click', ()=>{
   const ans = answerEl.value.trim().toLowerCase();
-  const correct = (trainWords[currentIndex].translation||'').toLowerCase();
-  if(ans===correct){
-    resultEl.textContent='✔ Правильно!'; resultEl.style.color='var(--success)';
-  }else{
-    resultEl.innerHTML=`✘ Неправильно. Правильный перевод: <b>${escapeHtml(correct)}</b>`;
-    resultEl.style.color='var(--danger)';
+  const correct = trainWords[currentIndex].translation.toLowerCase();
+
+  if(ans === correct){
+    resultEl.textContent = "✔ Правильно!";
+    resultEl.style.color = "var(--success)";
+  } else {
+    resultEl.innerHTML = `✘ Неправильно. Правильный перевод: <b>${escapeHtml(correct)}</b>`;
+    resultEl.style.color = "var(--danger)";
   }
+
   nextBtn.style.display='';
 });
 
-skipBtn.addEventListener('click', ()=>{ resultEl.textContent=''; nextBtn.style.display=''; });
+skipBtn.addEventListener('click', ()=>{
+  resultEl.textContent='';
+  nextBtn.style.display='';
+});
 
 nextBtn.addEventListener('click', ()=>{
   currentIndex++;
-  if(currentIndex>=trainWords.length){
-    trainWordEl.textContent=''; resultEl.textContent='Тренировка завершена!'; nextBtn.style.display='none'; return;
+  if(currentIndex >= trainWords.length){
+    trainWordEl.textContent='';
+    resultEl.textContent='Тренировка завершена!';
+    nextBtn.style.display='none';
+    return;
   }
   loadTrainingWord();
 });
 
-// ====== Утилиты ======
-function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } }
-function escapeHtml(s){ return String(s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+// ====== УТИЛИТЫ ======
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
 
-// ====== Начало ======
-loadWords();
+function escapeHtml(s){
+  return String(s||'')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;');
+}
+
+// ====== СТАРТ ======
 showView('add');
 
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
