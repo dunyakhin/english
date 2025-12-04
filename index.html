@@ -175,11 +175,13 @@ saveBtn.addEventListener('click', async ()=>{
 function loadWords(){
   onValue(wordsRef, snapshot=>{
     const data = snapshot.val();
-    listEl.innerHTML=''; let count=0;
+    listEl.innerHTML=''; 
+    let count = 0;
     trainWords = [];
+
     if(data){
       const items = Object.entries(data).sort((a,b)=> b[1].createdAt - a[1].createdAt);
-      items.forEach(([id,item])=>{
+      items.forEach(([id, item])=>{
         const div = document.createElement('div');
         div.className='word-item';
         div.innerHTML = `
@@ -191,15 +193,15 @@ function loadWords(){
             <div class="small">${new Date(item.createdAt).toLocaleString()}</div>
             <button style="background:var(--danger); color:#fff; border:none; border-radius:6px; padding:4px 8px; cursor:pointer;" onclick="deleteWord('${id}')">❌</button>
           </div>`;
+
         listEl.appendChild(div);
         trainWords.push(item);
         count++;
       });
     }
-    countEl.textContent = count;
-  }, {onlyOnce: true});
-}
 
+    countEl.textContent = count;
+});
 // ====== Удаление ======
 window.deleteWord = async (id)=>{
   if(!confirm('Удалить это слово?')) return;
