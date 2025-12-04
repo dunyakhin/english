@@ -159,17 +159,55 @@ clearBtn.addEventListener('click', ()=> { inputWord.value=''; inputTranslation.v
 
 // ====== CRUD ======
 saveBtn.addEventListener('click', async ()=>{
-  const word = inputWord.value.trim();
+  const word = inputWord.value.trim().toLowerCase();
   const translation = inputTranslation.value.trim();
-  if(!word || !translation){ alert('Заполните оба поля'); return; }
+  if(!word || !translation){ 
+    alert('Заполните оба поля'); 
+    return; 
+  }
 
-  saveBtn.disabled = true; saveBtn.textContent = 'Сохраняю…';
-  try{
-    await push(wordsRef, { word, translation, createdAt: Date.now() });
-    inputWord.value=''; inputTranslation.value='';
-  }catch(err){ alert('Ошибка при сохранении: '+err.message); console.error(err);}
-  saveBtn.disabled=false; saveBtn.textContent='Сохранить';
+  saveBtn.disabled = true; 
+  saveBtn.textContent = 'Проверяю…';
+
+  try {
+    // Загружаем существующие слова
+    const snapshot = await new Promise(resolve => 
+      onValue(wordsRef, resolve, { onlyOnce: true })
+    );
+
+    const data = snapshot.val() || {};
+
+    // Проверка на дубликат
+    const duplicate = Object.values(data)
+      .some(item => item.word.toLowerCase() === word);
+
+    if(duplicate){
+      alert("Это слово уже существует в базе!");
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Сохранить';
+      return;
+    }
+
+    // Если дубля нет — сохраняем
+    await push(wordsRef, { 
+      word, 
+      translation, 
+      createdAt: Date.now() 
+    });
+
+    inputWord.value=''; 
+    inputTranslation.value='';
+
+  } catch(err){
+    alert('Ошибка при сохранении: '+err.message);
+    console.error(err);
+
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Сохранить';
+  }
 });
+
 
 // ====== Загрузка слов ======
 function loadWords(){
