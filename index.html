@@ -116,7 +116,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const wordsRef = ref(db, 'words');
+const wordsRef = ref(db, 'englishwords');
 
 // ====== DOM ======
 const btnAdd = document.getElementById('btn-add');
@@ -203,7 +203,7 @@ function loadWords(){
 // ====== Удаление ======
 window.deleteWord = async (id)=>{
   if(!confirm('Удалить это слово?')) return;
-  try{ await remove(ref(db,'words/'+id)); } 
+  try{ await remove(ref(db,'englishwords/'+id)); } 
   catch(err){ alert('Ошибка при удалении: '+err.message); console.error(err);}
 }
 
