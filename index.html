@@ -277,7 +277,10 @@ function loadData(user){
     if(!data) return;
 
     Object.entries(data).forEach(([id,item])=>{
-      if(item.uid!==user.uid) return;
+
+      // 🔥 ВАЖНО: больше НЕ выкидываем слова без uid
+      // показываем ВСЁ что есть в базе
+      if(item.uid && item.uid !== user.uid) return;
 
       item.id=id;
       words.push(item);
@@ -300,7 +303,6 @@ function loadData(user){
     });
   });
 }
-
 window.toggleFav = async(id,fav)=>{
   await update(ref(db,'englishwords/'+id),{fav:!fav});
 };
