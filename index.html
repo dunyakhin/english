@@ -6,21 +6,62 @@
 <title>English Words</title>
 
 <style>
-
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter, Arial;background:linear-gradient(135deg,#667eea,#764ba2);} 
 .wrap{max-width:700px;margin:40px auto;padding:20px;}
-.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.15);margin-bottom:20px;}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+  margin-bottom:20px;
+}
+
 h2{margin-top:0}
-input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #ddd;font-size:16px}
+
+input,button{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  border:1px solid #ddd;
+  font-size:16px;
+}
+
 button{border:none;font-weight:bold;cursor:pointer}
+
 .primary{background:#667eea;color:#fff}
 .danger{background:#ff6b6b;color:#fff}
+
 .hidden{display:none}
-.word-card{display:flex;justify-content:space-between;align-items:center;padding:15px;border-radius:12px;background:#f9f9ff;margin-bottom:10px}
-.progress{height:10px;background:#eee;border-radius:10px;margin-top:10px;overflow:hidden}
-.progress-bar{height:100%;background:#667eea;width:0%}
-  #train{
+
+.word-card{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px;
+  border-radius:12px;
+  background:#f9f9ff;
+  margin-bottom:10px;
+}
+
+.progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  margin-top:10px;
+  overflow:hidden;
+}
+
+.progress-bar{
+  height:100%;
+  background:#667eea;
+  width:0%;
+}
+
+/* TRAIN UI FIX */
+#train{
   display:flex;
   flex-direction:column;
   gap:12px;
@@ -33,27 +74,10 @@ button{border:none;font-weight:bold;cursor:pointer}
   padding:20px;
   background:#f3f4ff;
   border-radius:14px;
-  margin:10px 0;
-  min-height:60px;
+  min-height:70px;
   display:flex;
   align-items:center;
   justify-content:center;
-}
-
-#answer{
-  margin-top:0;
-}
-
-#train button{
-  width:100%;
-}
-#train button{
-  margin:6px 0;
-} 
-  
-
-#train .progress{
-  margin-top:10px;
 }
 
 #result{
@@ -62,12 +86,17 @@ button{border:none;font-weight:bold;cursor:pointer}
   text-align:center;
   min-height:24px;
 }
+
+#train button{
+  margin:6px 0;
+}
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
+<!-- LOGIN -->
 <div id="login-view" class="card">
 <h2>🔐 Вход</h2>
 <input id="email" placeholder="Email">
@@ -76,7 +105,9 @@ button{border:none;font-weight:bold;cursor:pointer}
 <div id="loginError" style="color:red"></div>
 </div>
 
+<!-- APP -->
 <div id="app" class="hidden">
+
 <button id="logoutBtn" class="danger">Выйти</button>
 
 <div class="card">
@@ -86,6 +117,7 @@ button{border:none;font-weight:bold;cursor:pointer}
 <button onclick="show('train')">🧠 Тренировка</button>
 </div>
 
+<!-- ADD -->
 <div id="add" class="card hidden">
 <h2>➕ Добавить</h2>
 <input id="word" placeholder="English">
@@ -93,19 +125,28 @@ button{border:none;font-weight:bold;cursor:pointer}
 <button id="saveBtn" class="primary">Сохранить</button>
 </div>
 
+<!-- LIST -->
 <div id="listView" class="card hidden">
 <h2>📚 Список</h2>
 <div id="list"></div>
 </div>
 
+<!-- TRAIN -->
 <div id="train" class="card hidden">
 <h2>🧠 Тренировка</h2>
-<div id="cardBox" style="font-size:22px;margin:20px 0"></div>
+
+<div id="cardBox"></div>
+
 <input id="answer" placeholder="Введите перевод">
+
 <button onclick="checkAnswer()" class="primary">Проверить</button>
 <button onclick="nextCard()">Следующее</button>
 <button onclick="repeatErrors()">Только ошибки</button>
-<div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+
+<div class="progress">
+  <div id="progressBar" class="progress-bar"></div>
+</div>
+
 <div id="result"></div>
 </div>
 
@@ -117,13 +158,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-const firebaseConfig = { apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c", authDomain:"englishwords-d601c.firebaseapp.com", databaseURL:"https://englishwords-d601c-default-rtdb.firebaseio.com", projectId:"englishwords-d601c" };
-  
+const firebaseConfig = {
+  apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
+  authDomain:"englishwords-d601c.firebaseapp.com",
+  databaseURL:"https://englishwords-d601c-default-rtdb.firebaseio.com",
+  projectId:"englishwords-d601c"
+};
+
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 const auth = getAuth(firebaseApp);
 const wordsRef = ref(db,'englishwords');
-  const loginBtn = document.getElementById('loginBtn');
+
+/* DOM */
+const loginBtn = document.getElementById('loginBtn');
 const email = document.getElementById('email');
 const password = document.getElementById('password');
 const loginError = document.getElementById('loginError');
@@ -143,46 +191,41 @@ const progressBar = document.getElementById('progressBar');
 const add = document.getElementById('add');
 const listView = document.getElementById('listView');
 const train = document.getElementById('train');
-  
-  const loginView = document.getElementById('login-view');
+
+const loginView = document.getElementById('login-view');
 const app = document.getElementById('app');
 
+/* STATE */
+let words = [];
+let errors = [];
+let current = null;
+let correct = 0;
+let total = 0;
 
-let words=[];
-let errors=[];
-let current=null;
-let correct=0;
-let total=0;
-  
+/* LOGIN */
 loginBtn.onclick = async () => {
   try {
-    console.log("LOGIN TRY");
-    console.log("EMAIL:", email.value);
-    console.log("PASS:", password.value);
-
-    const res = await signInWithEmailAndPassword(
-      auth,
-      email.value,
-      password.value
-    );
-
-    console.log("LOGIN OK:", res.user);
-
+    await signInWithEmailAndPassword(auth, email.value, password.value);
   } catch (e) {
-    console.log("LOGIN ERROR CODE:", e.code);
-    console.log("LOGIN ERROR MESSAGE:", e.message);
-
     loginError.textContent = e.message;
   }
 };
 
-logoutBtn.onclick=()=>signOut(auth);
+logoutBtn.onclick = () => signOut(auth);
 
-onAuthStateChanged(auth,user=>{
-if(user){loginView.classList.add('hidden');app.classList.remove('hidden');loadData(user)}
-else{loginView.classList.remove('hidden');app.classList.add('hidden')}
+/* AUTH */
+onAuthStateChanged(auth, user => {
+  if (user) {
+    loginView.classList.add('hidden');
+    app.classList.remove('hidden');
+    loadData(user);
+  } else {
+    loginView.classList.remove('hidden');
+    app.classList.add('hidden');
+  }
 });
 
+/* NAV */
 function show(v){
   add.classList.add('hidden');
   listView.classList.add('hidden');
@@ -191,93 +234,111 @@ function show(v){
   if(v==='add') add.classList.remove('hidden');
   if(v==='list') listView.classList.remove('hidden');
 
-  if(v==='train') {
+  if(v==='train'){
     train.classList.remove('hidden');
-    nextCard(); // 🔥 ВАЖНО ДОБАВИТЬ
+    if(words.length > 0) nextCard();
   }
 }
+window.show = show;
 
-saveBtn.onclick=async()=>{
-const user=auth.currentUser;
-await push(wordsRef,{word:word.value,translation:translation.value,uid:user.uid,level:0});
-word.value='';translation.value='';
-}
+/* SAVE */
+saveBtn.onclick = async () => {
+  const user = auth.currentUser;
+  await push(wordsRef,{
+    word:word.value,
+    translation:translation.value,
+    uid:user.uid,
+    level:0
+  });
 
+  word.value='';
+  translation.value='';
+};
+
+/* LOAD */
 function loadData(user){
-onValue(wordsRef,snap=>{
-list.innerHTML='';words=[];
-const data=snap.val(); if(!data) return;
-Object.entries(data).forEach(([id,item])=>{
-if(item.uid && item.uid!==user.uid) return;
-item.id=id;
-words.push(item);
-const div=document.createElement('div');
-div.className='word-card';
-div.innerHTML=`<span><b>${item.word}</b> — ${item.translation}</span><button onclick="del('${id}')">✕</button>`;
-list.appendChild(div);
-});
-});
+  onValue(wordsRef, snap => {
+    list.innerHTML='';
+    words = [];
+
+    const data = snap.val();
+    if(!data) return;
+
+    Object.entries(data).forEach(([id,item])=>{
+      if(item.uid && item.uid !== user.uid) return;
+
+      item.id = id;
+      words.push(item);
+
+      const div = document.createElement('div');
+      div.className='word-card';
+      div.innerHTML = `
+        <span><b>${item.word}</b> — ${item.translation}</span>
+        <button onclick="del('${id}')">✕</button>
+      `;
+
+      list.appendChild(div);
+    });
+  });
 }
 
-window.del=id=>remove(ref(db,'englishwords/'+id));
+window.del = id => remove(ref(db,'englishwords/'+id));
 
+/* TRAIN */
 function nextCard(){
   const source = errors.length ? errors : words;
 
-  if(source.length===0){
-    cardBox.textContent = "⏳ Загружаем слова...";
+  if(!source.length){
+    cardBox.textContent = "⏳ Нет слов";
     return;
   }
 
   current = source[Math.floor(Math.random()*source.length)];
-  const reverse = Math.random()>0.5;
+  const reverse = Math.random() > 0.5;
 
   current.mode = reverse ? 'ru-en' : 'en-ru';
 
-  cardBox.textContent = reverse
-    ? current.translation
-    : current.word;
+  cardBox.textContent = reverse ? current.translation : current.word;
 
   answer.value='';
   result.textContent='';
 }
 
 function checkAnswer(){
-if(!current) return;
-const userAnswer = answer.value.trim().toLowerCase();
-const correctAnswer = current.mode==='ru-en'
-? current.word.toLowerCase()
-: current.translation.toLowerCase();
+  if(!current) return;
 
-total++;
+  const userAnswer = answer.value.trim().toLowerCase();
+  const correctAnswer =
+    current.mode === 'ru-en'
+      ? current.word.toLowerCase()
+      : current.translation.toLowerCase();
 
-if(userAnswer===correctAnswer){
-correct++;
-result.textContent='✅';
-update(ref(db,'englishwords/'+current.id),{level:(current.level||0)+1});
-}else{
-result.textContent='❌ '+correctAnswer;
-errors.push(current);
-}
+  total++;
 
-updateProgress();
+  if(userAnswer === correctAnswer){
+    correct++;
+    result.textContent='✅';
+    update(ref(db,'englishwords/'+current.id),{
+      level:(current.level||0)+1
+    });
+  } else {
+    result.textContent='❌ '+correctAnswer;
+    errors.push(current);
+  }
+
+  progressBar.style.width = total ? (correct/total*100)+'%' : '0%';
 }
 
 function repeatErrors(){
-if(errors.length===0){alert('Нет ошибок');return}
-words = [...errors];
-errors=[];
-nextCard();
+  if(!errors.length) return alert('Нет ошибок');
+  words = [...errors];
+  errors = [];
+  nextCard();
 }
 
-function updateProgress(){
-const percent = total ? (correct/total)*100 : 0;
-progressBar.style.width = percent+'%';
-}
-
-window.nextCard=nextCard;
-window.checkAnswer=checkAnswer;
-window.repeatErrors=repeatErrors;
+window.nextCard = nextCard;
+window.checkAnswer = checkAnswer;
+window.repeatErrors = repeatErrors;
 
 </script>
 </body>
