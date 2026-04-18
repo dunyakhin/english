@@ -75,6 +75,26 @@ import { getDatabase, ref, push, onValue, remove, update } from "https://www.gst
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 const firebaseConfig = { apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c", authDomain:"englishwords-d601c.firebaseapp.com", databaseURL:"https://englishwords-d601c-default-rtdb.firebaseio.com", projectId:"englishwords-d601c" };
+  const loginBtn = document.getElementById('loginBtn');
+const email = document.getElementById('email');
+const password = document.getElementById('password');
+const loginError = document.getElementById('loginError');
+const logoutBtn = document.getElementById('logoutBtn');
+
+const word = document.getElementById('word');
+const translation = document.getElementById('translation');
+const saveBtn = document.getElementById('saveBtn');
+
+const list = document.getElementById('list');
+
+const cardBox = document.getElementById('cardBox');
+const answer = document.getElementById('answer');
+const result = document.getElementById('result');
+const progressBar = document.getElementById('progressBar');
+
+const add = document.getElementById('add');
+const listView = document.getElementById('listView');
+const train = document.getElementById('train');
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
