@@ -75,6 +75,11 @@ import { getDatabase, ref, push, onValue, remove, update } from "https://www.gst
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 const firebaseConfig = { apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c", authDomain:"englishwords-d601c.firebaseapp.com", databaseURL:"https://englishwords-d601c-default-rtdb.firebaseio.com", projectId:"englishwords-d601c" };
+  
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const wordsRef = ref(db,'englishwords');
   const loginBtn = document.getElementById('loginBtn');
 const email = document.getElementById('email');
 const password = document.getElementById('password');
@@ -96,10 +101,6 @@ const add = document.getElementById('add');
 const listView = document.getElementById('listView');
 const train = document.getElementById('train');
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
-const wordsRef = ref(db,'englishwords');
 
 let words=[];
 let errors=[];
