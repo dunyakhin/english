@@ -6,6 +6,7 @@
 <title>English Words</title>
 
 <style>
+
 *{box-sizing:border-box}
 body{margin:0;font-family:Inter, Arial;background:linear-gradient(135deg,#667eea,#764ba2);} 
 .wrap{max-width:700px;margin:40px auto;padding:20px;}
@@ -46,6 +47,10 @@ button{border:none;font-weight:bold;cursor:pointer}
 #train button{
   width:100%;
 }
+#train button{
+  margin:6px 0;
+} 
+  
 
 #train .progress{
   margin-top:10px;
@@ -179,14 +184,18 @@ else{loginView.classList.remove('hidden');app.classList.add('hidden')}
 });
 
 function show(v){
-add.classList.add('hidden');
-listView.classList.add('hidden');
-train.classList.add('hidden');
-if(v==='add') add.classList.remove('hidden');
-if(v==='list') listView.classList.remove('hidden');
-if(v==='train') train.classList.remove('hidden');
+  add.classList.add('hidden');
+  listView.classList.add('hidden');
+  train.classList.add('hidden');
+
+  if(v==='add') add.classList.remove('hidden');
+  if(v==='list') listView.classList.remove('hidden');
+
+  if(v==='train') {
+    train.classList.remove('hidden');
+    nextCard(); // 🔥 ВАЖНО ДОБАВИТЬ
+  }
 }
-window.show=show;
 
 saveBtn.onclick=async()=>{
 const user=auth.currentUser;
@@ -213,13 +222,24 @@ list.appendChild(div);
 window.del=id=>remove(ref(db,'englishwords/'+id));
 
 function nextCard(){
-const source = errors.length ? errors : words;
-if(source.length===0) return;
-current = source[Math.floor(Math.random()*source.length)];
-const reverse = Math.random()>0.5;
-current.mode = reverse ? 'ru-en' : 'en-ru';
-cardBox.textContent = reverse ? current.translation : current.word;
-answer.value=''; result.textContent='';
+  const source = errors.length ? errors : words;
+
+  if(source.length===0){
+    cardBox.textContent = "⏳ Загружаем слова...";
+    return;
+  }
+
+  current = source[Math.floor(Math.random()*source.length)];
+  const reverse = Math.random()>0.5;
+
+  current.mode = reverse ? 'ru-en' : 'en-ru';
+
+  cardBox.textContent = reverse
+    ? current.translation
+    : current.word;
+
+  answer.value='';
+  result.textContent='';
 }
 
 function checkAnswer(){
