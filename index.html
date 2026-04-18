@@ -7,8 +7,17 @@
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Inter, Arial;background:linear-gradient(135deg,#667eea,#764ba2);} 
-.wrap{max-width:700px;margin:40px auto;padding:20px;}
+body{
+  margin:0;
+  font-family:Inter, Arial;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+}
+
+.wrap{
+  max-width:700px;
+  margin:40px auto;
+  padding:20px;
+}
 
 .card{
   background:#fff;
@@ -29,7 +38,11 @@ input,button{
   font-size:16px;
 }
 
-button{border:none;font-weight:bold;cursor:pointer}
+button{
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+}
 
 .primary{background:#667eea;color:#fff}
 .danger{background:#ff6b6b;color:#fff}
@@ -60,11 +73,13 @@ button{border:none;font-weight:bold;cursor:pointer}
   width:0%;
 }
 
-/* TRAIN UI FIX */
+/* TRAIN FIX */
 #train{
   display:flex;
   flex-direction:column;
   gap:12px;
+  max-height:80vh;
+  overflow-y:auto;
 }
 
 #cardBox{
@@ -89,6 +104,18 @@ button{border:none;font-weight:bold;cursor:pointer}
 
 #train button{
   margin:6px 0;
+}
+
+/* MODE BUTTONS */
+.mode-row{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.mode-row button{
+  flex:1;
+  font-size:14px;
 }
 </style>
 </head>
@@ -133,7 +160,15 @@ button{border:none;font-weight:bold;cursor:pointer}
 
 <!-- TRAIN -->
 <div id="train" class="card hidden">
+
 <h2>🧠 Тренировка</h2>
+
+<!-- MODE SELECT -->
+<div class="mode-row">
+  <button onclick="setMode('auto')" class="primary">🔀 Авто</button>
+  <button onclick="setMode('en-ru')">🇬🇧 → 🇷🇺</button>
+  <button onclick="setMode('ru-en')">🇷🇺 → 🇬🇧</button>
+</div>
 
 <div id="cardBox"></div>
 
@@ -148,6 +183,7 @@ button{border:none;font-weight:bold;cursor:pointer}
 </div>
 
 <div id="result"></div>
+
 </div>
 
 </div>
@@ -158,6 +194,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
+/* FIREBASE */
 const firebaseConfig = {
   apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
   authDomain:"englishwords-d601c.firebaseapp.com",
@@ -165,9 +202,9 @@ const firebaseConfig = {
   projectId:"englishwords-d601c"
 };
 
-const firebaseApp = initializeApp(firebaseConfig);
-const db = getDatabase(firebaseApp);
-const auth = getAuth(firebaseApp);
+const appFirebase = initializeApp(firebaseConfig);
+const db = getDatabase(appFirebase);
+const auth = getAuth(appFirebase);
 const wordsRef = ref(db,'englishwords');
 
 /* DOM */
@@ -175,6 +212,7 @@ const loginBtn = document.getElementById('loginBtn');
 const email = document.getElementById('email');
 const password = document.getElementById('password');
 const loginError = document.getElementById('loginError');
+
 const logoutBtn = document.getElementById('logoutBtn');
 
 const word = document.getElementById('word');
@@ -188,34 +226,35 @@ const answer = document.getElementById('answer');
 const result = document.getElementById('result');
 const progressBar = document.getElementById('progressBar');
 
+const loginView = document.getElementById('login-view');
+const app = document.getElementById('app');
+
 const add = document.getElementById('add');
 const listView = document.getElementById('listView');
 const train = document.getElementById('train');
 
-const loginView = document.getElementById('login-view');
-const app = document.getElementById('app');
-
 /* STATE */
-let words = [];
-let errors = [];
-let current = null;
-let correct = 0;
-let total = 0;
+let words=[];
+let errors=[];
+let current=null;
+let correct=0;
+let total=0;
 
-/* LOGIN */
+let trainMode = 'auto';
+
+/* AUTH */
 loginBtn.onclick = async () => {
   try {
-    await signInWithEmailAndPassword(auth, email.value, password.value);
-  } catch (e) {
+    await signInWithEmailAndPassword(auth,email.value,password.value);
+  } catch(e){
     loginError.textContent = e.message;
   }
 };
 
 logoutBtn.onclick = () => signOut(auth);
 
-/* AUTH */
-onAuthStateChanged(auth, user => {
-  if (user) {
+onAuthStateChanged(auth,user=>{
+  if(user){
     loginView.classList.add('hidden');
     app.classList.remove('hidden');
     loadData(user);
@@ -236,10 +275,17 @@ function show(v){
 
   if(v==='train'){
     train.classList.remove('hidden');
-    if(words.length > 0) nextCard();
+    if(words.length) nextCard();
   }
 }
 window.show = show;
+
+/* MODE */
+function setMode(mode){
+  trainMode = mode;
+  nextCard();
+}
+window.setMode = setMode;
 
 /* SAVE */
 saveBtn.onclick = async () => {
@@ -257,9 +303,9 @@ saveBtn.onclick = async () => {
 
 /* LOAD */
 function loadData(user){
-  onValue(wordsRef, snap => {
+  onValue(wordsRef,snap=>{
     list.innerHTML='';
-    words = [];
+    words=[];
 
     const data = snap.val();
     if(!data) return;
@@ -294,7 +340,13 @@ function nextCard(){
   }
 
   current = source[Math.floor(Math.random()*source.length)];
-  const reverse = Math.random() > 0.5;
+
+  let reverse;
+  if(trainMode === 'auto'){
+    reverse = Math.random() > 0.5;
+  } else {
+    reverse = (trainMode === 'ru-en');
+  }
 
   current.mode = reverse ? 'ru-en' : 'en-ru';
 
@@ -308,6 +360,7 @@ function checkAnswer(){
   if(!current) return;
 
   const userAnswer = answer.value.trim().toLowerCase();
+
   const correctAnswer =
     current.mode === 'ru-en'
       ? current.word.toLowerCase()
@@ -318,15 +371,18 @@ function checkAnswer(){
   if(userAnswer === correctAnswer){
     correct++;
     result.textContent='✅';
+
     update(ref(db,'englishwords/'+current.id),{
       level:(current.level||0)+1
     });
+
   } else {
     result.textContent='❌ '+correctAnswer;
     errors.push(current);
   }
 
-  progressBar.style.width = total ? (correct/total*100)+'%' : '0%';
+  progressBar.style.width =
+    total ? (correct/total*100)+'%' : '0%';
 }
 
 function repeatErrors(){
