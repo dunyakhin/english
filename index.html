@@ -6,149 +6,112 @@
 <title>English Words</title>
 
 <style>
-  *{box-sizing:border-box;}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter, Arial, sans-serif;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+}
+.wrap{
+  max-width:700px;
+  margin:40px auto;
+  padding:20px;
+}
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+  margin-bottom:20px;
+}
+h2{margin-top:0}
 
-  body{
-    margin:0;
-    font-family: Inter, Arial, sans-serif;
-    background: linear-gradient(135deg,#667eea,#764ba2);
-    color:#333;
-  }
+input,button{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
+  border:1px solid #ddd;
+  font-size:16px;
+}
 
-  .wrap{
-    max-width:700px;
-    margin:40px auto;
-    padding:20px;
-  }
+button{
+  border:none;
+  font-weight:bold;
+  cursor:pointer;
+}
 
-  .card{
-    background:#fff;
-    padding:20px;
-    border-radius:16px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.15);
-    margin-bottom:20px;
-  }
+.primary{background:#667eea;color:#fff}
+.primary:hover{background:#5a67d8}
 
-  h2{
-    margin-top:0;
-  }
+.danger{background:#ff6b6b;color:#fff}
+.danger:hover{background:#e55353}
 
-  input{
-    width:100%;
-    padding:12px;
-    margin:8px 0;
-    border-radius:10px;
-    border:1px solid #ddd;
-    font-size:16px;
-    transition:0.2s;
-  }
+.menu button{
+  margin-bottom:10px;
+}
 
-  input:focus{
-    border-color:#667eea;
-    outline:none;
-    box-shadow:0 0 0 2px rgba(102,126,234,0.2);
-  }
+.word-card{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:15px;
+  border-radius:12px;
+  background:#f9f9ff;
+  margin-bottom:10px;
+}
 
-  button{
-    width:100%;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-    transition:0.2s;
-  }
-
-  #loginBtn, #saveBtn{
-    background:#667eea;
-    color:#fff;
-  }
-
-  #loginBtn:hover, #saveBtn:hover{
-    background:#5a67d8;
-  }
-
-  #logoutBtn{
-    background:#ff6b6b;
-    color:#fff;
-    margin-bottom:15px;
-  }
-
-  #logoutBtn:hover{
-    background:#e55353;
-  }
-
-  .word-card{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    padding:15px;
-    border-radius:12px;
-    background:#f9f9ff;
-    margin-bottom:10px;
-    transition:0.2s;
-  }
-
-  .word-card:hover{
-    transform:translateY(-2px);
-    box-shadow:0 5px 15px rgba(0,0,0,0.1);
-  }
-
-  .word-text{
-    font-size:18px;
-  }
-
-  .delete-btn{
-    background:#ff6b6b;
-    color:#fff;
-    border:none;
-    padding:8px 12px;
-    border-radius:8px;
-    cursor:pointer;
-  }
-
-  .delete-btn:hover{
-    background:#e55353;
-  }
-
-  .hidden{
-    display:none;
-  }
-
+.hidden{display:none}
 </style>
-
 </head>
-<body>
 
+<body>
 <div class="wrap">
 
-  <div id="login-view" class="card">
-    <h2>🔐 Вход</h2>
-    <input id="email" type="text" placeholder="Email">
-    <input id="password" type="password" placeholder="Пароль">
-    <button id="loginBtn">Войти</button>
-    <div id="loginError" style="color:red;"></div>
+<!-- LOGIN -->
+<div id="login-view" class="card">
+  <h2>🔐 Вход</h2>
+  <input id="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Пароль">
+  <button id="loginBtn" class="primary">Войти</button>
+  <div id="loginError" style="color:red"></div>
+</div>
+
+<!-- APP -->
+<div id="app" class="hidden">
+
+  <button id="logoutBtn" class="danger">Выйти</button>
+
+  <!-- MENU -->
+  <div id="menu" class="card menu">
+    <h2>📱 Меню</h2>
+    <button onclick="show('add')">➕ Добавить слово</button>
+    <button onclick="show('list')">📚 Список слов</button>
+    <button onclick="show('train')">🧠 Тренировка</button>
   </div>
 
-  <div id="app" class="hidden">
-
-    <button id="logoutBtn">Выйти</button>
-
-    <div class="card">
-      <h2>➕ Добавить слово</h2>
-      <input id="word" placeholder="English">
-      <input id="translation" placeholder="Перевод">
-      <button id="saveBtn">Сохранить</button>
-    </div>
-
-    <div class="card">
-      <h2>📚 Список слов</h2>
-      <div id="list"></div>
-    </div>
-
+  <!-- ADD -->
+  <div id="add" class="card hidden">
+    <h2>➕ Добавить слово</h2>
+    <input id="word" placeholder="English">
+    <input id="translation" placeholder="Перевод">
+    <button id="saveBtn" class="primary">Сохранить</button>
   </div>
 
+  <!-- LIST -->
+  <div id="listView" class="card hidden">
+    <h2>📚 Список слов</h2>
+    <div id="list"></div>
+  </div>
+
+  <!-- TRAIN -->
+  <div id="train" class="card hidden">
+    <h2>🧠 Тренировка</h2>
+    <div id="trainBox">Нажми "начать"</div>
+    <button onclick="startTrain()" class="primary">Начать</button>
+  </div>
+
+</div>
 </div>
 
 <script type="module">
@@ -166,33 +129,23 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-const wordsRef = ref(db, 'englishwords');
+const wordsRef = ref(db,'englishwords');
 
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app');
-
-const emailEl = document.getElementById('email');
-const passEl = document.getElementById('password');
-const loginBtn = document.getElementById('loginBtn');
-const loginError = document.getElementById('loginError');
-const logoutBtn = document.getElementById('logoutBtn');
-
-const wordEl = document.getElementById('word');
-const transEl = document.getElementById('translation');
-const saveBtn = document.getElementById('saveBtn');
 const listEl = document.getElementById('list');
 
-loginBtn.onclick = async () => {
+let words = [];
+
+loginBtn.onclick = async ()=>{
   try{
-    await signInWithEmailAndPassword(auth,emailEl.value,passEl.value);
-  }catch(e){
-    loginError.textContent = e.message;
-  }
-};
+    await signInWithEmailAndPassword(auth,email.value,password.value);
+  }catch(e){loginError.textContent=e.message}
+}
 
-logoutBtn.onclick = () => signOut(auth);
+logoutBtn.onclick = ()=>signOut(auth);
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth,user=>{
   if(user){
     loginView.classList.add('hidden');
     appView.classList.remove('hidden');
@@ -203,48 +156,73 @@ onAuthStateChanged(auth, user => {
   }
 });
 
+function show(view){
+  document.getElementById('add').classList.add('hidden');
+  document.getElementById('listView').classList.add('hidden');
+  document.getElementById('train').classList.add('hidden');
+
+  if(view==='add') document.getElementById('add').classList.remove('hidden');
+  if(view==='list') document.getElementById('listView').classList.remove('hidden');
+  if(view==='train') document.getElementById('train').classList.remove('hidden');
+}
+
 saveBtn.onclick = async ()=>{
   const user = auth.currentUser;
   if(!user) return;
 
-  await push(wordsRef, {
-    word: wordEl.value,
-    translation: transEl.value,
-    uid: user.uid,
-    createdAt: Date.now()
+  await push(wordsRef,{
+    word:word.value,
+    translation:translation.value,
+    uid:user.uid
   });
 
-  wordEl.value='';
-  transEl.value='';
-};
+  word.value='';
+  translation.value='';
+}
 
 function loadData(user){
-  onValue(wordsRef, snapshot=>{
+  onValue(wordsRef,snap=>{
     listEl.innerHTML='';
-    const data = snapshot.val();
+    words=[];
+
+    const data=snap.val();
     if(!data) return;
 
     Object.entries(data).forEach(([id,item])=>{
-      if(item.uid !== user.uid) return;
+      if(item.uid!==user.uid) return;
 
-      const div = document.createElement('div');
+      words.push(item);
+
+      const div=document.createElement('div');
       div.className='word-card';
-
-      div.innerHTML = `
-        <div class="word-text"><b>${item.word}</b> — ${item.translation}</div>
-        <button class="delete-btn" onclick="del('${id}')">✕</button>
+      div.innerHTML=`
+        <span><b>${item.word}</b> — ${item.translation}</span>
+        <button onclick="del('${id}')">✕</button>
       `;
-
       listEl.appendChild(div);
     });
   });
 }
 
-window.del = async (id)=>{
-  await remove(ref(db,'englishwords/'+id));
-};
+window.del = id=> remove(ref(db,'englishwords/'+id));
+
+// TRAIN
+function startTrain(){
+  if(words.length===0){
+    trainBox.textContent='Нет слов';
+    return;
+  }
+
+  const w = words[Math.floor(Math.random()*words.length)];
+  trainBox.textContent = w.word + ' → ?';
+
+  setTimeout(()=>{
+    trainBox.textContent = w.word + ' → ' + w.translation;
+  },2000);
+}
+window.startTrain = startTrain;
+window.show = show;
 
 </script>
-
 </body>
 </html>
