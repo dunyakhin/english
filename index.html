@@ -7,6 +7,7 @@
 
 <style>
 *{box-sizing:border-box}
+
 body{
   margin:0;
   font-family:Inter, Arial;
@@ -19,6 +20,7 @@ body{
   padding:20px;
 }
 
+/* CARD */
 .card{
   background:#fff;
   padding:20px;
@@ -49,41 +51,44 @@ button{
 
 .hidden{display:none}
 
+/* LIST */
 .word-card{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:15px;
+  padding:12px 14px;
   border-radius:12px;
-  background:#f9f9ff;
+  background:#f7f7ff;
   margin-bottom:10px;
+  gap:10px;
 }
 
-.progress{
-  height:10px;
-  background:#eee;
-  border-radius:10px;
-  margin-top:10px;
-  overflow:hidden;
+/* текст */
+.word-card span{
+  font-size:15px;
+  line-height:1.3;
 }
 
-.progress-bar{
-  height:100%;
-  background:#667eea;
-  width:0%;
+/* маленькая кнопка удаления */
+.del-btn{
+  width:auto;
+  padding:6px 10px;
+  font-size:12px;
+  border-radius:8px;
+  background:#ff6b6b;
+  color:#fff;
+  flex-shrink:0;
 }
 
 /* TRAIN */
 #train{
   display:flex;
   flex-direction:column;
-  gap:12px;
-  max-height:80vh;
-  overflow-y:auto;
+  gap:10px;
 }
 
 #cardBox{
-  font-size:28px;
+  font-size:26px;
   font-weight:700;
   text-align:center;
   padding:20px;
@@ -95,27 +100,33 @@ button{
   justify-content:center;
 }
 
-#result{
-  font-size:18px;
-  font-weight:600;
-  text-align:center;
-  min-height:24px;
+.progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
 }
 
-#train button{
-  margin:6px 0;
+.progress-bar{
+  height:100%;
+  background:#667eea;
+  width:0%;
 }
 
-/* mode buttons */
-.mode-row{
+/* TAB BUTTONS */
+.tab-row{
   display:flex;
   gap:8px;
-  flex-wrap:wrap;
 }
 
-.mode-row button{
+.tab-row button{
   flex:1;
   font-size:14px;
+}
+
+/* iPad fix */
+button{
+  -webkit-tap-highlight-color: transparent;
 }
 </style>
 </head>
@@ -154,7 +165,7 @@ button{
 
 <!-- LIST -->
 <div id="listView" class="card hidden">
-<h2>📚 Список</h2>
+<h2>📚 Список слов</h2>
 <div id="list"></div>
 </div>
 
@@ -163,15 +174,9 @@ button{
 
 <h2>🧠 Тренировка</h2>
 
-<div class="mode-row">
-  <button onclick="setMode('auto')" class="primary">🔀 Авто</button>
-  <button onclick="setMode('en-ru')">🇬🇧 → 🇷🇺</button>
-  <button onclick="setMode('ru-en')">🇷🇺 → 🇬🇧</button>
-</div>
-
 <div id="cardBox"></div>
 
-<input id="answer" placeholder="Введите перевод">
+<input id="answer" placeholder="Ответ">
 
 <button onclick="checkAnswer()" class="primary">Проверить</button>
 <button onclick="nextCard()">Следующее</button>
@@ -192,6 +197,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
+/* FIREBASE */
 const firebaseConfig = {
   apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
   authDomain:"englishwords-d601c.firebaseapp.com",
@@ -205,9 +211,12 @@ const auth = getAuth(appFirebase);
 const wordsRef = ref(db,'englishwords');
 
 /* DOM */
-const loginBtn = document.getElementById('loginBtn');
+const loginView = document.getElementById('login-view');
+const app = document.getElementById('app');
+
 const email = document.getElementById('email');
 const password = document.getElementById('password');
+const loginBtn = document.getElementById('loginBtn');
 const loginError = document.getElementById('loginError');
 
 const logoutBtn = document.getElementById('logoutBtn');
@@ -223,9 +232,6 @@ const answer = document.getElementById('answer');
 const result = document.getElementById('result');
 const progressBar = document.getElementById('progressBar');
 
-const loginView = document.getElementById('login-view');
-const app = document.getElementById('app');
-
 const add = document.getElementById('add');
 const listView = document.getElementById('listView');
 const train = document.getElementById('train');
@@ -233,7 +239,6 @@ const train = document.getElementById('train');
 /* STATE */
 let words = [];
 let current = null;
-let trainMode = 'auto';
 let correct = 0;
 let total = 0;
 
@@ -260,32 +265,25 @@ onAuthStateChanged(auth,user=>{
   }
 });
 
-/* NAV */
+/* NAVIGATION (FIXED) */
 function show(v){
-  add.classList.add('hidden');
-  listView.classList.add('hidden');
-  train.classList.add('hidden');
+  [add,listView,train].forEach(x=>x.classList.add('hidden'));
 
   if(v==='add') add.classList.remove('hidden');
   if(v==='list') listView.classList.remove('hidden');
 
   if(v==='train'){
     train.classList.remove('hidden');
-    if(words.length) nextCard();
+    nextCard();
   }
 }
-window.show = show;
 
-/* MODE */
-function setMode(mode){
-  trainMode = mode;
-  nextCard();
-}
-window.setMode = setMode;
+window.show = show;
 
 /* SAVE */
 saveBtn.onclick = async () => {
   const user = auth.currentUser;
+
   await push(wordsRef,{
     word:word.value,
     translation:translation.value,
@@ -314,10 +312,12 @@ function loadData(user){
 
       const div = document.createElement('div');
       div.className='word-card';
-      div.innerHTML=`
+
+      div.innerHTML = `
         <span><b>${item.word}</b> — ${item.translation}</span>
-        <button onclick="del('${id}')">✕</button>
+        <button class="del-btn" onclick="del('${id}')">✕</button>
       `;
+
       list.appendChild(div);
     });
   });
@@ -328,22 +328,19 @@ window.del = id => remove(ref(db,'englishwords/'+id));
 /* TRAIN */
 function nextCard(){
   if(!words.length){
-    cardBox.textContent = "⏳ Нет слов";
+    cardBox.textContent = "Нет слов";
     return;
   }
 
   current = words[Math.floor(Math.random()*words.length)];
 
-  let reverse;
-  if(trainMode === 'auto'){
-    reverse = Math.random() > 0.5;
-  } else {
-    reverse = (trainMode === 'ru-en');
-  }
+  const reverse = Math.random() > 0.5;
 
   current.mode = reverse ? 'ru-en' : 'en-ru';
 
-  cardBox.textContent = reverse ? current.translation : current.word;
+  cardBox.textContent = reverse
+    ? current.translation
+    : current.word;
 
   answer.value='';
   result.textContent='';
@@ -364,10 +361,6 @@ function checkAnswer(){
   if(userAnswer === correctAnswer){
     correct++;
     result.textContent='✅';
-
-    update(ref(db,'englishwords/'+current.id),{
-      level:(current.level||0)+1
-    });
   } else {
     result.textContent='❌ '+correctAnswer;
   }
