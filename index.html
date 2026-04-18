@@ -266,6 +266,9 @@ document.getElementById('saveBtn').onclick=async()=>{
   word.value='';
   translation.value='';
 };
+  window.delWord = async (id)=>{
+  await remove(ref(db,'englishwords/'+id));
+};
 
 /* LOAD LIST (ОБЫЧНЫЙ СПИСОК НЕ СЛОМАН) */
 function loadData(user){
@@ -298,6 +301,26 @@ function loadData(user){
           ⭐
         </button>
       `;
+      div.innerHTML=`
+  <span>
+    <b>${item.word}</b> — ${item.translation}
+  </span>
+
+  <div style="display:flex;gap:6px">
+    
+    <button class="fav-btn ${item.fav?'active':''}"
+      onclick="toggleFav('${id}',${item.fav})">
+      ⭐
+    </button>
+
+    <button class="danger"
+      style="width:auto;padding:6px 10px;font-size:12px"
+      onclick="delWord('${id}')">
+      ✕
+    </button>
+
+  </div>
+`;
 
       list.appendChild(div);
     });
