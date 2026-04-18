@@ -76,9 +76,9 @@ import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from
 
 const firebaseConfig = { apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c", authDomain:"englishwords-d601c.firebaseapp.com", databaseURL:"https://englishwords-d601c-default-rtdb.firebaseio.com", projectId:"englishwords-d601c" };
   
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth(app);
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
+const auth = getAuth(firebaseApp);
 const wordsRef = ref(db,'englishwords');
   const loginBtn = document.getElementById('loginBtn');
 const email = document.getElementById('email');
