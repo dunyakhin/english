@@ -1,401 +1,178 @@
 <!doctype html>
+
 <html lang="ru">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Английские слова</title>
-<link rel="icon" type="image/png" href="images/fav.png">
+
 <style>
-  :root{
-    --bg:#f7f8fb; --card:#ffffff; --accent:#20e3b2; --muted:#6b7280;
-    --success:#16a34a; --danger:#dc2626; --radius:12px; 
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-  }
-  html,body{height:100%; margin:0; background:var(--bg); color:#111}
-  .wrap{max-width:900px; margin:18px auto; padding:18px; box-sizing:border-box;}
-  header{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px;}
-  h1{font-size:18px; margin:0}
-  .controls{display:flex; gap:8px; flex-wrap:wrap;}
-  button{background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600}
-  button.ghost{background:transparent; color:var(--accent); border:1px solid rgba(59,130,246,.16)}
-  main{display:grid; grid-template-columns:1fr 360px; gap:16px;}
-  @media (max-width:820px){ main{grid-template-columns:1fr;}}
-  .card{background:var(--card); border-radius:var(--radius); padding:14px; box-shadow:0 6px 18px rgba(15,23,42,0.06);}
-  form {display:flex; gap:8px; flex-direction:column;}
-  input[type="text"]{padding:10px; border-radius:8px; border:1px solid #e6e9ef; width:100%; box-sizing:border-box;}
-  .list{display:flex; flex-direction:column; gap:8px; max-height:60vh; overflow:auto; padding-right:6px;}
-  .word-item{display:flex; justify-content:space-between; gap:8px; padding:10px; border-radius:10px; background:#fbfdff; border:1px solid #eef2ff; align-items:center;}
-  .word-text{font-weight:600}
-  .word-sub{font-size:13px; color:var(--muted)}
-  .small{font-size:13px; color:var(--muted)}
-  .train-word{font-size:28px; font-weight:700; margin:8px 0;}
-  .result{font-weight:700; margin-top:8px;}
-  .next{margin-top:8px}
-  footer{margin-top:18px; font-size:13px; color:var(--muted)}
+  body{font-family:Arial; background:#f5f5f5; margin:0;}
+  .wrap{max-width:900px;margin:auto;padding:20px;}
+  input,button{padding:10px;margin:5px 0;}
+  .hidden{display:none;}
+  .card{background:#fff;padding:15px;border-radius:10px;margin-bottom:10px;}
 </style>
+
 </head>
+
 <body>
 <div class="wrap">
-  <header>
-    <h1>Английские слова — тренажёр</h1>
-    <div class="controls">
-      <button id="btn-add" class="ghost">Добавить</button>
-      <button id="btn-list" class="ghost">Список</button>
-      <button id="btn-train">Тренировка ENG-RUS </button>
-      <button id="btn-train2">Тренировка RUS-ENG</button>
-    </div>
-  </header>
 
-  <main>
-    <section id="main-area" class="card">
-      <!-- ADD -->
-      <div id="view-add">
-        <h2 style="margin:0 0 8px 0">Добавить слово</h2>
-        <form id="form-add" onsubmit="return false;">
-          <input id="word" type="text" placeholder="Английское слово" autocomplete="off" />
-          <input id="translation" type="text" placeholder="Перевод" autocomplete="off" />
-          <div style="display:flex; gap:8px;">
-            <button id="saveBtn" type="button">Сохранить</button>
-            <button id="clearBtn" type="button" class="ghost">Очистить</button>
-          </div>
-        </form>
-      </div>
+  <!-- LOGIN -->
 
-      <!-- LIST -->
-      <div id="view-list" style="display:none;">
-        <h2 style="margin:0 0 8px 0">Сохранённые слова</h2>
-        <div id="list" class="list"></div>
-      </div>
+  <div id="login-view" class="card">
+    <h2>Вход</h2>
+    <input id="email" type="text" placeholder="Email">
+    <input id="password" type="password" placeholder="Пароль">
+    <button id="loginBtn">Войти</button>
+    <div id="loginError" style="color:red;"></div>
+  </div>
 
-      <!-- TRAIN ENG → RUS -->
-      <div id="view-train" style="display:none;">
-        <h2>Тренировка</h2>
-        <p class="small">Введите перевод: </p>
-        <div class="train-word" id="train-word"></div>
-        <input id="answer" type="text" placeholder="Перевод" autocomplete="off" />
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="checkBtn">Проверить</button>
-          <button id="skipBtn" class="ghost">Пропустить</button>
-        </div>
-        <div id="result" class="result"></div>
-        <button id="nextBtn" style="display:none;" class="next ghost">Следующее</button>
-      </div>
+  <!-- APP -->
 
-      <!-- TRAIN 2 RUS → ENG -->
-      <div id="view-train-2" style="display:none;">
-        <h2>Тренировка</h2>
-        <p class="small">Введите английское слово (RUS → ENG):</p>
-        <div class="train-word" id="train2-word"></div>
-        <input id="answer2" type="text" placeholder="Английский вариант" autocomplete="off" />
-        <div style="display:flex; gap:8px; margin-top:8px;">
-          <button id="checkBtn2">Проверить</button>
-          <button id="skipBtn2" class="ghost">Пропустить</button>
-        </div>
-        <div id="result2" class="result"></div>
-        <button id="nextBtn2" style="display:none;" class="next ghost">Следующее</button>
-      </div>
+  <div id="app" class="hidden">
 
-    </section>
+```
+<button id="logoutBtn">Выйти</button>
 
-    <aside class="card" style="height:fit-content;">
-      <h3>Информация</h3>
-      <hr/>
-      <p class="small"><b>Всего слов:</b> <span id="count">0</span></p>
-    </aside>
-  </main>
+<h2>Добавить слово</h2>
+<input id="word" placeholder="English">
+<input id="translation" placeholder="Перевод">
+<button id="saveBtn">Сохранить</button>
 
-  <footer></footer>
+<h2>Список</h2>
+<div id="list"></div>
+```
+
+  </div>
+
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
+import { 
+  getDatabase, ref, push, onValue, remove 
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+// CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
   authDomain: "englishwords-d601c.firebaseapp.com",
   databaseURL: "https://englishwords-d601c-default-rtdb.firebaseio.com",
   projectId: "englishwords-d601c",
-  storageBucket: "englishwords-d601c.firebasestorage.app",
-  messagingSenderId: "786020234142",
-  appId: "1:786020234142:web:ab01b3d6396ab599ad1c8f",
-  measurementId: "G-MGJ1T6PK19"
 };
 
+// INIT
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth(app);
+
 const wordsRef = ref(db, 'englishwords');
 
 // DOM
-const btnAdd = document.getElementById('btn-add');
-const btnList = document.getElementById('btn-list');
-const btnTrain = document.getElementById('btn-train');
-const btnTrain2 = document.getElementById('btn-train2');
+const loginView = document.getElementById('login-view');
+const appView = document.getElementById('app');
 
-const viewAdd = document.getElementById('view-add');
-const viewList = document.getElementById('view-list');
-const viewTrain = document.getElementById('view-train');
-const viewTrain2 = document.getElementById('view-train-2');
+const emailEl = document.getElementById('email');
+const passEl = document.getElementById('password');
+const loginBtn = document.getElementById('loginBtn');
+const loginError = document.getElementById('loginError');
 
-const listEl = document.getElementById('list');
-const countEl = document.getElementById('count');
+const logoutBtn = document.getElementById('logoutBtn');
 
-const inputWord = document.getElementById('word');
-const inputTranslation = document.getElementById('translation');
+const wordEl = document.getElementById('word');
+const transEl = document.getElementById('translation');
 const saveBtn = document.getElementById('saveBtn');
-const clearBtn = document.getElementById('clearBtn');
+const listEl = document.getElementById('list');
 
-// TRAIN 1
-const trainWordEl = document.getElementById('train-word');
-const answerEl = document.getElementById('answer');
-const checkBtn = document.getElementById('checkBtn');
-const skipBtn = document.getElementById('skipBtn');
-const resultEl = document.getElementById('result');
-const nextBtn = document.getElementById('nextBtn');
-
-// TRAIN 2
-const trainWordEl2 = document.getElementById('train2-word');
-const answerEl2 = document.getElementById('answer2');
-const checkBtn2 = document.getElementById('checkBtn2');
-const skipBtn2 = document.getElementById('skipBtn2');
-const resultEl2 = document.getElementById('result2');
-const nextBtn2 = document.getElementById('nextBtn2');
-
-let trainWords = [];
-let currentIndex = 0;
-
-// VIEW SWITCH
-function showView(name){
-  viewAdd.style.display = name==='add' ? '' : 'none';
-  viewList.style.display = name==='list' ? '' : 'none';
-  viewTrain.style.display = name==='train' ? '' : 'none';
-  viewTrain2.style.display = name==='train2' ? '' : 'none';
-}
-
-btnAdd.addEventListener('click', ()=> showView('add'));
-btnList.addEventListener('click', ()=> showView('list'));
-btnTrain.addEventListener('click', ()=> startTraining());
-btnTrain2.addEventListener('click', ()=> startTraining2());
-
-clearBtn.addEventListener('click', ()=> { 
-  inputWord.value=''; 
-  inputTranslation.value=''; 
-});
-
-// LIVE UPDATE
-onValue(wordsRef, snapshot => {
-  const data = snapshot.val();
-  listEl.innerHTML=''; 
-  trainWords=[];
-  let count = 0;
-
-  if(data){
-    const items = Object.entries(data).sort((a,b)=> b[1].createdAt - a[1].createdAt);
-
-    items.forEach(([id, item])=>{
-      const div = document.createElement('div');
-      div.className = 'word-item';
-
-      div.innerHTML = `
-        <div>
-          <div class="word-text">${escapeHtml(item.word)}</div>
-          <div class="word-sub">${escapeHtml(item.translation)}</div>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div class="small">${new Date(item.createdAt).toLocaleString()}</div>
-          <button style="background:var(--danger); color:#fff; border:none; border-radius:6px; padding:4px 8px; cursor:pointer;"
-            onclick="deleteWord('${id}')">❌</button>
-        </div>
-      `;
-
-      listEl.appendChild(div);
-      trainWords.push(item);
-      count++;
-    });
-  }
-
-  countEl.textContent = count;
-});
-
-// DELETE
-window.deleteWord = async (id)=>{
-  if(!confirm('Удалить это слово?')) return;
-  try{ 
-    await remove(ref(db,'englishwords/'+id)); 
-  }catch(err){ 
-    alert('Ошибка при удалении: '+err.message); 
+// LOGIN
+loginBtn.onclick = async () => {
+  try{
+    await signInWithEmailAndPassword(
+      auth,
+      emailEl.value,
+      passEl.value
+    );
+  }catch(e){
+    loginError.textContent = e.message;
   }
 };
 
-// SAVE
-saveBtn.addEventListener('click', async ()=>{
-  const word = inputWord.value.trim().toLowerCase();
-  const translation = inputTranslation.value.trim();
+// LOGOUT
+logoutBtn.onclick = () => signOut(auth);
 
-  if(!word || !translation){
-    alert('Заполните оба поля');
+// AUTH STATE
+onAuthStateChanged(auth, user => {
+  if(user){
+    loginView.classList.add('hidden');
+    appView.classList.remove('hidden');
+    loadData(user);
+  }else{
+    loginView.classList.remove('hidden');
+    appView.classList.add('hidden');
+  }
+});
+
+// SAVE WORD
+saveBtn.onclick = async ()=>{
+  const user = auth.currentUser;
+
+  if(!user){
+    alert("Не авторизован");
     return;
   }
 
-  saveBtn.disabled = true;
-  saveBtn.textContent = "Проверяю…";
+  await push(wordsRef, {
+    word: wordEl.value,
+    translation: transEl.value,
+    uid: user.uid,
+    createdAt: Date.now()
+  });
 
-  try {
-    const snapshot = await new Promise(resolve => 
-      onValue(wordsRef, resolve, { onlyOnce: true })
-    );
+  wordEl.value='';
+  transEl.value='';
+};
 
-    const data = snapshot.val() || {};
+// LOAD DATA
+function loadData(user){
+  onValue(wordsRef, snapshot=>{
+    listEl.innerHTML = '';
 
-    const duplicate = Object.values(data)
-      .some(item => item.word.toLowerCase() === word);
+    const data = snapshot.val();
+    if(!data) return;
 
-    if(duplicate){
-      alert("Это слово уже есть в базе!");
-      saveBtn.disabled=false;
-      saveBtn.textContent="Сохранить";
-      return;
-    }
+    Object.entries(data).forEach(([id,item])=>{
+      
+      if(item.uid !== user.uid) return;
 
-    await push(wordsRef, {
-      word,
-      translation,
-      createdAt: Date.now()
+      const div = document.createElement('div');
+      div.className="card";
+
+      div.innerHTML = `
+        <b>${item.word}</b> — ${item.translation}
+        <button onclick="del('${id}')">❌</button>
+      `;
+
+      listEl.appendChild(div);
     });
-
-    inputWord.value='';
-    inputTranslation.value='';
-
-  }catch(err){
-    alert("Ошибка: " + err.message);
-  }
-
-  saveBtn.disabled=false;
-  saveBtn.textContent="Сохранить";
-});
-
-// TRAIN 1 (ENG → RUS)
-function startTraining(){
-  if(trainWords.length===0){
-    alert("Нет слов для тренировки");
-    return;
-  }
-
-  shuffle(trainWords);
-  currentIndex = 0;
-  showView('train');
-  loadTrainingWord();
+  });
 }
 
-function loadTrainingWord(){
-  const w = trainWords[currentIndex];
-  trainWordEl.textContent = w.word;
-  answerEl.value = '';
-  resultEl.textContent='';
-  nextBtn.style.display='none';
-}
-
-checkBtn.addEventListener('click', ()=>{
-  const ans = answerEl.value.trim().toLowerCase();
-  const correct = trainWords[currentIndex].translation.toLowerCase();
-
-  if(ans === correct){
-    resultEl.textContent = "✔ Правильно!";
-    resultEl.style.color = "var(--success)";
-  } else {
-    resultEl.innerHTML = `✘ Неправильно. Правильный перевод: <b>${escapeHtml(correct)}</b>`;
-    resultEl.style.color = "var(--danger)";
-  }
-
-  nextBtn.style.display='';
-});
-
-skipBtn.addEventListener('click', ()=>{
-  resultEl.textContent='';
-  nextBtn.style.display='';
-});
-
-nextBtn.addEventListener('click', ()=>{
-  currentIndex++;
-  if(currentIndex >= trainWords.length){
-    trainWordEl.textContent='';
-    resultEl.textContent='Тренировка завершена!';
-    nextBtn.style.display='none';
-    return;
-  }
-  loadTrainingWord();
-});
-
-// TRAIN 2 (RUS → ENG)
-function startTraining2(){
-  if(trainWords.length===0){
-    alert("Нет слов для тренировки");
-    return;
-  }
-
-  shuffle(trainWords);
-  currentIndex = 0;
-  showView('train2');
-  loadTrainingWord2();
-}
-
-function loadTrainingWord2(){
-  const w = trainWords[currentIndex];
-  trainWordEl2.textContent = w.translation; // показываем русский
-  answerEl2.value = '';
-  resultEl2.textContent='';
-  nextBtn2.style.display='none';
-}
-
-checkBtn2.addEventListener('click', ()=>{
-  const ans = answerEl2.value.trim().toLowerCase();
-  const correct = trainWords[currentIndex].word.toLowerCase(); // правильный английский
-
-  if(ans === correct){
-    resultEl2.textContent = "✔ Правильно!";
-    resultEl2.style.color = "var(--success)";
-  } else {
-    resultEl2.innerHTML = `✘ Неправильно. Правильное слово: <b>${escapeHtml(correct)}</b>`;
-    resultEl2.style.color = "var(--danger)";
-  }
-
-  nextBtn2.style.display='';
-});
-
-skipBtn2.addEventListener('click', ()=>{
-  resultEl2.textContent='';
-  nextBtn2.style.display='';
-});
-
-nextBtn2.addEventListener('click', ()=>{
-  currentIndex++;
-  if(currentIndex >= trainWords.length){
-    trainWordEl2.textContent='';
-    resultEl2.textContent='Тренировка завершена!';
-    nextBtn2.style.display='none';
-    return;
-  }
-  loadTrainingWord2();
-});
-
-// UTILS
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-}
-
-function escapeHtml(s){
-  return String(s||'')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;');
-}
-
-showView('add');
+// DELETE
+window.del = async (id)=>{
+  await remove(ref(db,'englishwords/'+id));
+};
 
 </script>
+
 </body>
 </html>
-
