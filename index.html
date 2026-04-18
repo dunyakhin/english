@@ -63,29 +63,23 @@ button{
 }
 
 .word-card span{
-  font-size:15px;
   flex:1;
+  font-size:15px;
 }
 
-/* buttons */
 .small-btn{
   width:auto;
   padding:6px 10px;
   font-size:12px;
   border-radius:8px;
-  flex-shrink:0;
 }
-
-.del-btn{background:#ff6b6b;color:#fff}
 
 .fav-btn{
   background:#ddd;
-  color:#000;
 }
 
 .fav-btn.active{
   background:#ffd54f;
-  color:#000;
 }
 
 /* TRAIN */
@@ -108,22 +102,7 @@ button{
   justify-content:center;
 }
 
-/* TABS */
-.tab-row{
-  display:flex;
-  gap:8px;
-}
-
-.tab-row button{
-  flex:1;
-  font-size:13px;
-}
-
-.tab-active{
-  background:#667eea;
-  color:#fff;
-}
-
+/* PROGRESS */
 .progress{
   height:10px;
   background:#eee;
@@ -140,6 +119,7 @@ button{
 </head>
 
 <body>
+
 <div class="wrap">
 
 <!-- LOGIN -->
@@ -174,7 +154,7 @@ button{
 
 <!-- LIST -->
 <div id="listView" class="card hidden">
-<h2>📚 Список слов</h2>
+<h2>📚 Список</h2>
 <div id="list"></div>
 </div>
 
@@ -182,12 +162,6 @@ button{
 <div id="train" class="card hidden">
 
 <h2>🧠 Тренировка</h2>
-
-<div class="tab-row">
-  <button id="mode-auto" onclick="setMode('auto')">🔀 Авто</button>
-  <button id="mode-enru" onclick="setMode('en-ru')">🇬🇧→🇷🇺</button>
-  <button id="mode-ruen" onclick="setMode('ru-en')">🇷🇺→🇬🇧</button>
-</div>
 
 <div id="cardBox"></div>
 
@@ -208,6 +182,7 @@ button{
 </div>
 
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
@@ -219,14 +194,14 @@ const firebaseConfig = {
   projectId:"englishwords-d601c"
 };
 
-const appFirebase = initializeApp(firebaseConfig);
-const db = getDatabase(appFirebase);
-const auth = getAuth(appFirebase);
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
 const wordsRef = ref(db,'englishwords');
 
 /* DOM */
 const loginView = document.getElementById('login-view');
-const app = document.getElementById('app');
+const appView = document.getElementById('app');
 
 const email = document.getElementById('email');
 const password = document.getElementById('password');
@@ -243,9 +218,11 @@ const progressBar = document.getElementById('progressBar');
 
 /* STATE */
 let words = [];
+let session = [];
+let index = 0;
 let current = null;
-let mode = 'auto';
-let trainMode = 'all'; // all | fav
+
+let trainMode = 'all';
 let correct = 0;
 let total = 0;
 
@@ -264,11 +241,11 @@ document.getElementById('logoutBtn').onclick = () => signOut(auth);
 onAuthStateChanged(auth,user=>{
   if(user){
     loginView.classList.add('hidden');
-    app.classList.remove('hidden');
+    appView.classList.remove('hidden');
     loadData(user);
   } else {
     loginView.classList.remove('hidden');
-    app.classList.add('hidden');
+    appView.classList.add('hidden');
   }
 });
 
@@ -285,28 +262,14 @@ window.show = function(v){
   if(v==='train'){
     trainMode = 'all';
     document.getElementById('train').classList.remove('hidden');
-    nextCard();
+    startSession();
   }
 
   if(v==='favtrain'){
     trainMode = 'fav';
     document.getElementById('train').classList.remove('hidden');
-    nextCard();
+    startSession();
   }
-};
-
-/* MODE */
-window.setMode = function(m){
-  mode = m;
-
-  document.querySelectorAll('.tab-row button')
-    .forEach(b=>b.classList.remove('tab-active'));
-
-  if(m==='auto') document.getElementById('mode-auto').classList.add('tab-active');
-  if(m==='en-ru') document.getElementById('mode-enru').classList.add('tab-active');
-  if(m==='ru-en') document.getElementById('mode-ruen').classList.add('tab-active');
-
-  nextCard();
 };
 
 /* SAVE */
@@ -339,22 +302,18 @@ function loadData(user){
       item.id=id;
       words.push(item);
 
-      const div = document.createElement('div');
+      const div=document.createElement('div');
       div.className='word-card';
 
-      const isFav = item.fav;
-
       div.innerHTML=`
-        <span>
-          <b>${item.word}</b> — ${item.translation}
-        </span>
+        <span><b>${item.word}</b> — ${item.translation}</span>
 
-        <button class="small-btn fav-btn ${isFav?'active':''}"
-          onclick="toggleFav('${id}',${isFav})">
+        <button class="small-btn fav-btn ${item.fav?'active':''}"
+          onclick="toggleFav('${id}',${item.fav})">
           ⭐
         </button>
 
-        <button class="small-btn del-btn"
+        <button class="small-btn danger"
           onclick="del('${id}')">✕</button>
       `;
 
@@ -365,47 +324,62 @@ function loadData(user){
 
 window.del = id => remove(ref(db,'englishwords/'+id));
 
-window.toggleFav = async (id,currentFav)=>{
+window.toggleFav = async (id,fav)=>{
   await update(ref(db,'englishwords/'+id),{
-    fav: !currentFav
+    fav:!fav
   });
 };
 
-/* TRAIN */
-function nextCard(){
+/* SESSION */
+function startSession(){
   let pool = words;
 
   if(trainMode==='fav'){
     pool = words.filter(w=>w.fav);
-    if(pool.length===0){
-      cardBox.textContent="⭐ Избранные закончились";
-      current=null;
-      return;
-    }
   }
 
-  if(!pool.length){
-    cardBox.textContent="Нет слов";
+  session = shuffle([...pool]);
+  index = 0;
+
+  if(session.length===0){
+    cardBox.textContent = "Нет слов для тренировки";
     return;
   }
 
-  current = pool[Math.floor(Math.random()*pool.length)];
+  nextCard();
+}
 
-  let reverse;
-  if(mode==='auto'){
-    reverse = Math.random()>0.5;
-  } else {
-    reverse = (mode==='ru-en');
+/* SHUFFLE */
+function shuffle(arr){
+  return arr.map(v=>({v,r:Math.random()}))
+    .sort((a,b)=>a.r-b.r)
+    .map(x=>x.v);
+}
+
+/* NEXT */
+function nextCard(){
+
+  if(index>=session.length){
+    cardBox.textContent="🎉 Тренировка завершена";
+    current=null;
+    return;
   }
 
-  current.mode = reverse ? 'ru-en' : 'en-ru';
+  current = session[index++];
 
-  cardBox.textContent = reverse ? current.translation : current.word;
+  const reverse = Math.random()>0.5;
+
+  current.mode = reverse?'ru-en':'en-ru';
+
+  cardBox.textContent = reverse
+    ? current.translation
+    : current.word;
 
   answer.value='';
   result.textContent='';
 }
 
+/* CHECK */
 function checkAnswer(){
   if(!current) return;
 
@@ -426,11 +400,11 @@ function checkAnswer(){
   }
 
   progressBar.style.width =
-    total ? (correct/total*100)+'%' : '0%';
+    (correct/total*100)+'%';
 }
 
-window.nextCard = nextCard;
-window.checkAnswer = checkAnswer;
+window.nextCard=nextCard;
+window.checkAnswer=checkAnswer;
 
 </script>
 </body>
