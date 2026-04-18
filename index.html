@@ -110,11 +110,29 @@ let errors=[];
 let current=null;
 let correct=0;
 let total=0;
+  
+loginBtn.onclick = async () => {
+  try {
+    console.log("LOGIN TRY");
+    console.log("EMAIL:", email.value);
+    console.log("PASS:", password.value);
 
-loginBtn.onclick=async()=>{
-try{await signInWithEmailAndPassword(auth,email.value,password.value)}
-catch(e){loginError.textContent=e.message}
-}
+    const res = await signInWithEmailAndPassword(
+      auth,
+      email.value,
+      password.value
+    );
+
+    console.log("LOGIN OK:", res.user);
+
+  } catch (e) {
+    console.log("LOGIN ERROR CODE:", e.code);
+    console.log("LOGIN ERROR MESSAGE:", e.message);
+
+    loginError.textContent = e.message;
+  }
+};
+
 logoutBtn.onclick=()=>signOut(auth);
 
 onAuthStateChanged(auth,user=>{
