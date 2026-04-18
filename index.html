@@ -14,11 +14,7 @@ body{
   background:linear-gradient(135deg,#667eea,#764ba2);
 }
 
-.wrap{
-  max-width:700px;
-  margin:40px auto;
-  padding:20px;
-}
+.wrap{max-width:700px;margin:40px auto;padding:20px;}
 
 .card{
   background:#fff;
@@ -55,7 +51,7 @@ button{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:12px 14px;
+  padding:12px;
   border-radius:12px;
   background:#f7f7ff;
   margin-bottom:10px;
@@ -64,7 +60,6 @@ button{
 
 .word-card span{
   flex:1;
-  font-size:15px;
 }
 
 .small-btn{
@@ -102,7 +97,7 @@ button{
   justify-content:center;
 }
 
-/* PROGRESS */
+/* progress */
 .progress{
   height:10px;
   background:#eee;
@@ -260,13 +255,13 @@ window.show = function(v){
   if(v==='list') document.getElementById('listView').classList.remove('hidden');
 
   if(v==='train'){
-    trainMode = 'all';
+    trainMode='all';
     document.getElementById('train').classList.remove('hidden');
     startSession();
   }
 
   if(v==='favtrain'){
-    trainMode = 'fav';
+    trainMode='fav';
     document.getElementById('train').classList.remove('hidden');
     startSession();
   }
@@ -293,7 +288,7 @@ function loadData(user){
     list.innerHTML='';
     words=[];
 
-    const data = snap.val();
+    const data=snap.val();
     if(!data) return;
 
     Object.entries(data).forEach(([id,item])=>{
@@ -324,9 +319,10 @@ function loadData(user){
 
 window.del = id => remove(ref(db,'englishwords/'+id));
 
+/* ⭐ TOGGLE FAV */
 window.toggleFav = async (id,fav)=>{
   await update(ref(db,'englishwords/'+id),{
-    fav:!fav
+    fav: !fav
   });
 };
 
@@ -342,7 +338,7 @@ function startSession(){
   index = 0;
 
   if(session.length===0){
-    cardBox.textContent = "Нет слов для тренировки";
+    cardBox.textContent="Нет слов для тренировки";
     return;
   }
 
@@ -351,7 +347,8 @@ function startSession(){
 
 /* SHUFFLE */
 function shuffle(arr){
-  return arr.map(v=>({v,r:Math.random()}))
+  return arr
+    .map(v=>({v,r:Math.random()}))
     .sort((a,b)=>a.r-b.r)
     .map(x=>x.v);
 }
@@ -365,11 +362,11 @@ function nextCard(){
     return;
   }
 
-  current = session[index++];
+  current=session[index++];
 
-  const reverse = Math.random()>0.5;
+  const reverse=Math.random()>0.5;
 
-  current.mode = reverse?'ru-en':'en-ru';
+  current.mode=reverse?'ru-en':'en-ru';
 
   cardBox.textContent = reverse
     ? current.translation
@@ -383,9 +380,9 @@ function nextCard(){
 function checkAnswer(){
   if(!current) return;
 
-  const user = answer.value.trim().toLowerCase();
+  const user=answer.value.trim().toLowerCase();
 
-  const correctAnswer =
+  const correctAnswer=
     current.mode==='ru-en'
       ? current.word.toLowerCase()
       : current.translation.toLowerCase();
@@ -399,13 +396,13 @@ function checkAnswer(){
     result.textContent='❌ '+correctAnswer;
   }
 
-  progressBar.style.width =
-    (correct/total*100)+'%';
+  progressBar.style.width=(correct/total*100)+'%';
 }
 
 window.nextCard=nextCard;
 window.checkAnswer=checkAnswer;
 
 </script>
+
 </body>
 </html>
