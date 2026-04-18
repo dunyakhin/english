@@ -64,6 +64,7 @@ button{
 
 .word-card span{
   font-size:15px;
+  flex:1;
 }
 
 /* buttons */
@@ -76,7 +77,16 @@ button{
 }
 
 .del-btn{background:#ff6b6b;color:#fff}
-.fav-btn{background:#ffd54f;color:#000}
+
+.fav-btn{
+  background:#ddd;
+  color:#000;
+}
+
+.fav-btn.active{
+  background:#ffd54f;
+  color:#000;
+}
 
 /* TRAIN */
 #train{
@@ -102,7 +112,6 @@ button{
 .tab-row{
   display:flex;
   gap:8px;
-  flex-wrap:wrap;
 }
 
 .tab-row button{
@@ -152,7 +161,7 @@ button{
 <button onclick="show('add')">➕ Добавить</button>
 <button onclick="show('list')">📚 Список</button>
 <button onclick="show('train')">🧠 Тренировка</button>
-<button onclick="show('favtrain')">⭐ Избранные</button>
+<button onclick="show('favtrain')">⭐ Избранное</button>
 </div>
 
 <!-- ADD -->
@@ -203,7 +212,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-/* FIREBASE */
 const firebaseConfig = {
   apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
   authDomain:"englishwords-d601c.firebaseapp.com",
@@ -237,6 +245,7 @@ const progressBar = document.getElementById('progressBar');
 let words = [];
 let current = null;
 let mode = 'auto';
+let trainMode = 'all'; // all | fav
 let correct = 0;
 let total = 0;
 
@@ -274,13 +283,15 @@ window.show = function(v){
   if(v==='list') document.getElementById('listView').classList.remove('hidden');
 
   if(v==='train'){
+    trainMode = 'all';
     document.getElementById('train').classList.remove('hidden');
     nextCard();
   }
 
   if(v==='favtrain'){
+    trainMode = 'fav';
     document.getElementById('train').classList.remove('hidden');
-    nextCard(true);
+    nextCard();
   }
 };
 
@@ -331,13 +342,15 @@ function loadData(user){
       const div = document.createElement('div');
       div.className='word-card';
 
+      const isFav = item.fav;
+
       div.innerHTML=`
         <span>
           <b>${item.word}</b> — ${item.translation}
         </span>
 
-        <button class="small-btn fav-btn"
-          onclick="toggleFav('${id}', ${item.fav?true:false})">
+        <button class="small-btn fav-btn ${isFav?'active':''}"
+          onclick="toggleFav('${id}',${isFav})">
           ⭐
         </button>
 
@@ -359,11 +372,16 @@ window.toggleFav = async (id,currentFav)=>{
 };
 
 /* TRAIN */
-function nextCard(favOnly=false){
+function nextCard(){
   let pool = words;
 
-  if(favOnly){
+  if(trainMode==='fav'){
     pool = words.filter(w=>w.fav);
+    if(pool.length===0){
+      cardBox.textContent="⭐ Избранные закончились";
+      current=null;
+      return;
+    }
   }
 
   if(!pool.length){
