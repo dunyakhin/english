@@ -73,7 +73,7 @@ button{
   width:0%;
 }
 
-/* TRAIN FIX */
+/* TRAIN */
 #train{
   display:flex;
   flex-direction:column;
@@ -106,7 +106,7 @@ button{
   margin:6px 0;
 }
 
-/* MODE BUTTONS */
+/* mode buttons */
 .mode-row{
   display:flex;
   gap:8px;
@@ -163,7 +163,6 @@ button{
 
 <h2>🧠 Тренировка</h2>
 
-<!-- MODE SELECT -->
 <div class="mode-row">
   <button onclick="setMode('auto')" class="primary">🔀 Авто</button>
   <button onclick="setMode('en-ru')">🇬🇧 → 🇷🇺</button>
@@ -176,7 +175,6 @@ button{
 
 <button onclick="checkAnswer()" class="primary">Проверить</button>
 <button onclick="nextCard()">Следующее</button>
-<button onclick="repeatErrors()">Только ошибки</button>
 
 <div class="progress">
   <div id="progressBar" class="progress-bar"></div>
@@ -194,7 +192,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/fireba
 import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-/* FIREBASE */
 const firebaseConfig = {
   apiKey:"AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
   authDomain:"englishwords-d601c.firebaseapp.com",
@@ -234,15 +231,13 @@ const listView = document.getElementById('listView');
 const train = document.getElementById('train');
 
 /* STATE */
-let words=[];
-let errors=[];
-let current=null;
-let correct=0;
-let total=0;
-
+let words = [];
+let current = null;
 let trainMode = 'auto';
+let correct = 0;
+let total = 0;
 
-/* AUTH */
+/* LOGIN */
 loginBtn.onclick = async () => {
   try {
     await signInWithEmailAndPassword(auth,email.value,password.value);
@@ -253,6 +248,7 @@ loginBtn.onclick = async () => {
 
 logoutBtn.onclick = () => signOut(auth);
 
+/* AUTH */
 onAuthStateChanged(auth,user=>{
   if(user){
     loginView.classList.add('hidden');
@@ -318,11 +314,10 @@ function loadData(user){
 
       const div = document.createElement('div');
       div.className='word-card';
-      div.innerHTML = `
+      div.innerHTML=`
         <span><b>${item.word}</b> — ${item.translation}</span>
         <button onclick="del('${id}')">✕</button>
       `;
-
       list.appendChild(div);
     });
   });
@@ -332,14 +327,12 @@ window.del = id => remove(ref(db,'englishwords/'+id));
 
 /* TRAIN */
 function nextCard(){
-  const source = errors.length ? errors : words;
-
-  if(!source.length){
+  if(!words.length){
     cardBox.textContent = "⏳ Нет слов";
     return;
   }
 
-  current = source[Math.floor(Math.random()*source.length)];
+  current = words[Math.floor(Math.random()*words.length)];
 
   let reverse;
   if(trainMode === 'auto'){
@@ -375,26 +368,16 @@ function checkAnswer(){
     update(ref(db,'englishwords/'+current.id),{
       level:(current.level||0)+1
     });
-
   } else {
     result.textContent='❌ '+correctAnswer;
-    errors.push(current);
   }
 
   progressBar.style.width =
     total ? (correct/total*100)+'%' : '0%';
 }
 
-function repeatErrors(){
-  if(!errors.length) return alert('Нет ошибок');
-  words = [...errors];
-  errors = [];
-  nextCard();
-}
-
 window.nextCard = nextCard;
 window.checkAnswer = checkAnswer;
-window.repeatErrors = repeatErrors;
 
 </script>
 </body>
