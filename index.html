@@ -59,20 +59,24 @@ button{
   border-radius:12px;
   background:#f7f7ff;
   margin-bottom:10px;
+  gap:8px;
 }
 
 .word-card span{
   font-size:15px;
 }
 
-.del-btn{
+/* buttons */
+.small-btn{
   width:auto;
   padding:6px 10px;
   font-size:12px;
   border-radius:8px;
-  background:#ff6b6b;
-  color:#fff;
+  flex-shrink:0;
 }
+
+.del-btn{background:#ff6b6b;color:#fff}
+.fav-btn{background:#ffd54f;color:#000}
 
 /* TRAIN */
 #train{
@@ -98,11 +102,12 @@ button{
 .tab-row{
   display:flex;
   gap:8px;
+  flex-wrap:wrap;
 }
 
 .tab-row button{
   flex:1;
-  font-size:14px;
+  font-size:13px;
 }
 
 .tab-active{
@@ -147,6 +152,7 @@ button{
 <button onclick="show('add')">➕ Добавить</button>
 <button onclick="show('list')">📚 Список</button>
 <button onclick="show('train')">🧠 Тренировка</button>
+<button onclick="show('favtrain')">⭐ Избранные</button>
 </div>
 
 <!-- ADD -->
@@ -168,7 +174,6 @@ button{
 
 <h2>🧠 Тренировка</h2>
 
-<!-- 🔥 ТАБЫ -->
 <div class="tab-row">
   <button id="mode-auto" onclick="setMode('auto')">🔀 Авто</button>
   <button id="mode-enru" onclick="setMode('en-ru')">🇬🇧→🇷🇺</button>
@@ -195,7 +200,7 @@ button{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 /* FIREBASE */
@@ -260,19 +265,26 @@ onAuthStateChanged(auth,user=>{
 
 /* NAV */
 window.show = function(v){
-  document.getElementById('add').classList.add('hidden');
-  document.getElementById('listView').classList.add('hidden');
-  document.getElementById('train').classList.add('hidden');
+  ['add','listView','train'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.classList.add('hidden');
+  });
 
   if(v==='add') document.getElementById('add').classList.remove('hidden');
   if(v==='list') document.getElementById('listView').classList.remove('hidden');
+
   if(v==='train'){
     document.getElementById('train').classList.remove('hidden');
     nextCard();
   }
+
+  if(v==='favtrain'){
+    document.getElementById('train').classList.remove('hidden');
+    nextCard(true);
+  }
 };
 
-/* MODE TABS */
+/* MODE */
 window.setMode = function(m){
   mode = m;
 
@@ -293,7 +305,8 @@ document.getElementById('saveBtn').onclick = async () => {
   await push(wordsRef,{
     word:word.value,
     translation:translation.value,
-    uid:user.uid
+    uid:user.uid,
+    fav:false
   });
 
   word.value='';
@@ -317,9 +330,19 @@ function loadData(user){
 
       const div = document.createElement('div');
       div.className='word-card';
+
       div.innerHTML=`
-        <span><b>${item.word}</b> — ${item.translation}</span>
-        <button class="del-btn" onclick="del('${id}')">✕</button>
+        <span>
+          <b>${item.word}</b> — ${item.translation}
+        </span>
+
+        <button class="small-btn fav-btn"
+          onclick="toggleFav('${id}', ${item.fav?true:false})">
+          ⭐
+        </button>
+
+        <button class="small-btn del-btn"
+          onclick="del('${id}')">✕</button>
       `;
 
       list.appendChild(div);
@@ -329,14 +352,26 @@ function loadData(user){
 
 window.del = id => remove(ref(db,'englishwords/'+id));
 
+window.toggleFav = async (id,currentFav)=>{
+  await update(ref(db,'englishwords/'+id),{
+    fav: !currentFav
+  });
+};
+
 /* TRAIN */
-function nextCard(){
-  if(!words.length){
+function nextCard(favOnly=false){
+  let pool = words;
+
+  if(favOnly){
+    pool = words.filter(w=>w.fav);
+  }
+
+  if(!pool.length){
     cardBox.textContent="Нет слов";
     return;
   }
 
-  current = words[Math.floor(Math.random()*words.length)];
+  current = pool[Math.floor(Math.random()*pool.length)];
 
   let reverse;
   if(mode==='auto'){
