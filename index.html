@@ -46,23 +46,15 @@ button{
 
 .hidden{display:none}
 
-/* LIST */
+/* LIST (ВОЗВРАЩЕН НОРМАЛЬНЫЙ) */
 .word-card{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:12px;
+  padding:10px;
   background:#f7f7ff;
-  border-radius:12px;
-  margin-bottom:10px;
-  gap:8px;
-}
-
-.small-btn{
-  width:auto;
-  padding:6px 10px;
-  font-size:12px;
-  border-radius:8px;
+  border-radius:10px;
+  margin-bottom:8px;
 }
 
 /* TRAIN */
@@ -85,20 +77,16 @@ button{
   justify-content:center;
 }
 
-/* ⭐ FAVORITE BUTTON */
-.fav-panel{
-  display:flex;
-  justify-content:center;
+/* ⭐ */
+.fav-btn{
+  width:auto;
+  padding:6px 10px;
+  font-size:12px;
+  border-radius:8px;
+  background:#ddd;
 }
 
-#favBtn{
-  width:100%;
-  background:#fff;
-  border:2px solid #ffd54f;
-  color:#333;
-}
-
-#favBtn.active{
+.fav-btn.active{
   background:#ffd54f;
 }
 
@@ -128,6 +116,7 @@ button{
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Пароль">
 <button id="loginBtn" class="primary">Войти</button>
+<div id="loginError"></div>
 </div>
 
 <!-- APP -->
@@ -153,7 +142,7 @@ button{
 
 <!-- LIST -->
 <div id="listView" class="card hidden">
-<h2>📚 Список</h2>
+<h2>📚 Список слов</h2>
 <div id="list"></div>
 </div>
 
@@ -164,10 +153,8 @@ button{
 
 <div id="cardBox"></div>
 
-<!-- ⭐ ВОТ КНОПКА ИЗБРАННОГО В ТРЕНИРОВКЕ -->
-<div class="fav-panel">
+<!-- ⭐ -->
 <button id="favBtn" onclick="toggleFavTrain()">⭐</button>
-</div>
 
 <input id="answer" placeholder="Ответ">
 
@@ -201,36 +188,34 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-
 const wordsRef = ref(db,'englishwords');
 
 /* DOM */
-const loginView = document.getElementById('login-view');
-const appView = document.getElementById('app');
-
 const list = document.getElementById('list');
 const cardBox = document.getElementById('cardBox');
 const answer = document.getElementById('answer');
 const result = document.getElementById('result');
 const progressBar = document.getElementById('progressBar');
-
 const favBtn = document.getElementById('favBtn');
+
+const loginView = document.getElementById('login-view');
+const appView = document.getElementById('app');
 
 /* STATE */
 let words=[];
 let session=[];
 let current=null;
 let index=0;
+let mode='all';
 let correct=0;
 let total=0;
-let mode='all';
 
 /* LOGIN */
-document.getElementById('loginBtn').onclick = async () => {
+document.getElementById('loginBtn').onclick = async ()=>{
   await signInWithEmailAndPassword(auth,email.value,password.value);
 };
 
-document.getElementById('logoutBtn').onclick = () => signOut(auth);
+document.getElementById('logoutBtn').onclick=()=>signOut(auth);
 
 /* AUTH */
 onAuthStateChanged(auth,user=>{
@@ -245,7 +230,7 @@ onAuthStateChanged(auth,user=>{
 });
 
 /* NAV */
-window.show = (v)=>{
+window.show=(v)=>{
   ['add','listView','train'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.classList.add('hidden');
@@ -268,7 +253,7 @@ window.show = (v)=>{
 };
 
 /* SAVE */
-document.getElementById('saveBtn').onclick = async ()=>{
+document.getElementById('saveBtn').onclick=async()=>{
   const user=auth.currentUser;
 
   await push(wordsRef,{
@@ -282,7 +267,7 @@ document.getElementById('saveBtn').onclick = async ()=>{
   translation.value='';
 };
 
-/* LOAD */
+/* LOAD LIST (ОБЫЧНЫЙ СПИСОК НЕ СЛОМАН) */
 function loadData(user){
   onValue(wordsRef,snap=>{
     list.innerHTML='';
@@ -301,8 +286,11 @@ function loadData(user){
       div.className='word-card';
 
       div.innerHTML=`
-        <span>${item.word} — ${item.translation}</span>
-        <button class="small-btn ${item.fav?'primary':''}"
+        <span>
+          <b>${item.word}</b> — ${item.translation}
+        </span>
+
+        <button class="fav-btn ${item.fav?'active':''}"
           onclick="toggleFav('${id}',${item.fav})">
           ⭐
         </button>
@@ -313,27 +301,13 @@ function loadData(user){
   });
 }
 
-/* FAVORITE TOGGLE (LIST) */
-window.toggleFav = async (id,fav)=>{
-  await update(ref(db,'englishwords/'+id),{
-    fav:!fav
-  });
+window.toggleFav = async(id,fav)=>{
+  await update(ref(db,'englishwords/'+id),{fav:!fav});
 };
 
-/* TRAIN FAVORITE BUTTON */
-window.toggleFavTrain = async ()=>{
-  if(!current) return;
-
-  await update(ref(db,'englishwords/'+current.id),{
-    fav: !current.fav
-  });
-
-  current.fav = !current.fav;
-  renderFav();
-};
-
-/* START */
+/* TRAIN */
 function start(){
+
   let pool = words;
 
   if(mode==='fav'){
@@ -341,10 +315,7 @@ function start(){
   }
 
   session = shuffle(pool);
-
   index=0;
-  correct=0;
-  total=0;
 
   if(session.length===0){
     cardBox.textContent="Нет слов";
@@ -354,18 +325,16 @@ function start(){
   nextCard();
 }
 
-/* SHUFFLE */
 function shuffle(a){
   return a.map(v=>({v,r:Math.random()}))
-          .sort((a,b)=>a.r-b.r)
-          .map(x=>x.v);
+    .sort((a,b)=>a.r-b.r)
+    .map(x=>x.v);
 }
 
-/* NEXT */
 function nextCard(){
 
   if(index>=session.length){
-    cardBox.textContent="🏁 Конец тренировки";
+    cardBox.textContent="🏁 Конец";
     current=null;
     return;
   }
@@ -373,6 +342,7 @@ function nextCard(){
   current=session[index++];
 
   const rev=Math.random()>0.5;
+
   current.mode=rev?'ru-en':'en-ru';
 
   cardBox.textContent = rev
@@ -385,15 +355,22 @@ function nextCard(){
   renderFav();
 }
 
-/* ⭐ update fav button */
 function renderFav(){
   if(!current) return;
-
-  favBtn.textContent = current.fav ? "⭐ В избранном" : "☆ В избранное";
-  favBtn.classList.toggle('active', current.fav);
+  favBtn.textContent = current.fav ? "⭐ Убрать из избранного" : "⭐ В избранное";
 }
 
-/* CHECK */
+window.toggleFavTrain = async ()=>{
+  if(!current) return;
+
+  await update(ref(db,'englishwords/'+current.id),{
+    fav: !current.fav
+  });
+
+  current.fav = !current.fav;
+  renderFav();
+};
+
 window.checkAnswer=()=>{
   if(!current) return;
 
@@ -406,13 +383,12 @@ window.checkAnswer=()=>{
   total++;
 
   if(u===c){
-    correct++;
     result.textContent="✅";
   } else {
     result.textContent="❌ "+c;
   }
 
-  progressBar.style.width=(correct/total*100)+'%';
+  progressBar.style.width=(total?100:0)+'%';
 };
 
 window.nextCard=nextCard;
