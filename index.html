@@ -20,7 +20,6 @@ body{
   padding:20px;
 }
 
-/* CARD */
 .card{
   background:#fff;
   padding:20px;
@@ -60,16 +59,12 @@ button{
   border-radius:12px;
   background:#f7f7ff;
   margin-bottom:10px;
-  gap:10px;
 }
 
-/* текст */
 .word-card span{
   font-size:15px;
-  line-height:1.3;
 }
 
-/* маленькая кнопка удаления */
 .del-btn{
   width:auto;
   padding:6px 10px;
@@ -77,7 +72,6 @@ button{
   border-radius:8px;
   background:#ff6b6b;
   color:#fff;
-  flex-shrink:0;
 }
 
 /* TRAIN */
@@ -100,6 +94,22 @@ button{
   justify-content:center;
 }
 
+/* TABS */
+.tab-row{
+  display:flex;
+  gap:8px;
+}
+
+.tab-row button{
+  flex:1;
+  font-size:14px;
+}
+
+.tab-active{
+  background:#667eea;
+  color:#fff;
+}
+
 .progress{
   height:10px;
   background:#eee;
@@ -111,22 +121,6 @@ button{
   height:100%;
   background:#667eea;
   width:0%;
-}
-
-/* TAB BUTTONS */
-.tab-row{
-  display:flex;
-  gap:8px;
-}
-
-.tab-row button{
-  flex:1;
-  font-size:14px;
-}
-
-/* iPad fix */
-button{
-  -webkit-tap-highlight-color: transparent;
 }
 </style>
 </head>
@@ -174,6 +168,13 @@ button{
 
 <h2>🧠 Тренировка</h2>
 
+<!-- 🔥 ТАБЫ -->
+<div class="tab-row">
+  <button id="mode-auto" onclick="setMode('auto')">🔀 Авто</button>
+  <button id="mode-enru" onclick="setMode('en-ru')">🇬🇧→🇷🇺</button>
+  <button id="mode-ruen" onclick="setMode('ru-en')">🇷🇺→🇬🇧</button>
+</div>
+
 <div id="cardBox"></div>
 
 <input id="answer" placeholder="Ответ">
@@ -194,7 +195,7 @@ button{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
 /* FIREBASE */
@@ -216,14 +217,9 @@ const app = document.getElementById('app');
 
 const email = document.getElementById('email');
 const password = document.getElementById('password');
-const loginBtn = document.getElementById('loginBtn');
-const loginError = document.getElementById('loginError');
-
-const logoutBtn = document.getElementById('logoutBtn');
 
 const word = document.getElementById('word');
 const translation = document.getElementById('translation');
-const saveBtn = document.getElementById('saveBtn');
 
 const list = document.getElementById('list');
 
@@ -232,26 +228,23 @@ const answer = document.getElementById('answer');
 const result = document.getElementById('result');
 const progressBar = document.getElementById('progressBar');
 
-const add = document.getElementById('add');
-const listView = document.getElementById('listView');
-const train = document.getElementById('train');
-
 /* STATE */
 let words = [];
 let current = null;
+let mode = 'auto';
 let correct = 0;
 let total = 0;
 
 /* LOGIN */
-loginBtn.onclick = async () => {
+document.getElementById('loginBtn').onclick = async () => {
   try {
     await signInWithEmailAndPassword(auth,email.value,password.value);
   } catch(e){
-    loginError.textContent = e.message;
+    document.getElementById('loginError').textContent = e.message;
   }
 };
 
-logoutBtn.onclick = () => signOut(auth);
+document.getElementById('logoutBtn').onclick = () => signOut(auth);
 
 /* AUTH */
 onAuthStateChanged(auth,user=>{
@@ -265,30 +258,42 @@ onAuthStateChanged(auth,user=>{
   }
 });
 
-/* NAVIGATION (FIXED) */
-function show(v){
-  [add,listView,train].forEach(x=>x.classList.add('hidden'));
+/* NAV */
+window.show = function(v){
+  document.getElementById('add').classList.add('hidden');
+  document.getElementById('listView').classList.add('hidden');
+  document.getElementById('train').classList.add('hidden');
 
-  if(v==='add') add.classList.remove('hidden');
-  if(v==='list') listView.classList.remove('hidden');
-
+  if(v==='add') document.getElementById('add').classList.remove('hidden');
+  if(v==='list') document.getElementById('listView').classList.remove('hidden');
   if(v==='train'){
-    train.classList.remove('hidden');
+    document.getElementById('train').classList.remove('hidden');
     nextCard();
   }
-}
+};
 
-window.show = show;
+/* MODE TABS */
+window.setMode = function(m){
+  mode = m;
+
+  document.querySelectorAll('.tab-row button')
+    .forEach(b=>b.classList.remove('tab-active'));
+
+  if(m==='auto') document.getElementById('mode-auto').classList.add('tab-active');
+  if(m==='en-ru') document.getElementById('mode-enru').classList.add('tab-active');
+  if(m==='ru-en') document.getElementById('mode-ruen').classList.add('tab-active');
+
+  nextCard();
+};
 
 /* SAVE */
-saveBtn.onclick = async () => {
+document.getElementById('saveBtn').onclick = async () => {
   const user = auth.currentUser;
 
   await push(wordsRef,{
     word:word.value,
     translation:translation.value,
-    uid:user.uid,
-    level:0
+    uid:user.uid
   });
 
   word.value='';
@@ -305,15 +310,14 @@ function loadData(user){
     if(!data) return;
 
     Object.entries(data).forEach(([id,item])=>{
-      if(item.uid && item.uid !== user.uid) return;
+      if(item.uid && item.uid!==user.uid) return;
 
-      item.id = id;
+      item.id=id;
       words.push(item);
 
       const div = document.createElement('div');
       div.className='word-card';
-
-      div.innerHTML = `
+      div.innerHTML=`
         <span><b>${item.word}</b> — ${item.translation}</span>
         <button class="del-btn" onclick="del('${id}')">✕</button>
       `;
@@ -328,19 +332,22 @@ window.del = id => remove(ref(db,'englishwords/'+id));
 /* TRAIN */
 function nextCard(){
   if(!words.length){
-    cardBox.textContent = "Нет слов";
+    cardBox.textContent="Нет слов";
     return;
   }
 
   current = words[Math.floor(Math.random()*words.length)];
 
-  const reverse = Math.random() > 0.5;
+  let reverse;
+  if(mode==='auto'){
+    reverse = Math.random()>0.5;
+  } else {
+    reverse = (mode==='ru-en');
+  }
 
   current.mode = reverse ? 'ru-en' : 'en-ru';
 
-  cardBox.textContent = reverse
-    ? current.translation
-    : current.word;
+  cardBox.textContent = reverse ? current.translation : current.word;
 
   answer.value='';
   result.textContent='';
@@ -349,16 +356,16 @@ function nextCard(){
 function checkAnswer(){
   if(!current) return;
 
-  const userAnswer = answer.value.trim().toLowerCase();
+  const user = answer.value.trim().toLowerCase();
 
   const correctAnswer =
-    current.mode === 'ru-en'
+    current.mode==='ru-en'
       ? current.word.toLowerCase()
       : current.translation.toLowerCase();
 
   total++;
 
-  if(userAnswer === correctAnswer){
+  if(user===correctAnswer){
     correct++;
     result.textContent='✅';
   } else {
