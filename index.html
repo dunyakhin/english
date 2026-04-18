@@ -1,49 +1,151 @@
 <!doctype html>
-
 <html lang="ru">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Английские слова</title>
+<title>English Words</title>
 
 <style>
-  body{font-family:Arial; background:#f5f5f5; margin:0;}
-  .wrap{max-width:900px;margin:auto;padding:20px;}
-  input,button{padding:10px;margin:5px 0;}
-  .hidden{display:none;}
-  .card{background:#fff;padding:15px;border-radius:10px;margin-bottom:10px;}
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    font-family: Inter, Arial, sans-serif;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    color:#333;
+  }
+
+  .wrap{
+    max-width:700px;
+    margin:40px auto;
+    padding:20px;
+  }
+
+  .card{
+    background:#fff;
+    padding:20px;
+    border-radius:16px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.15);
+    margin-bottom:20px;
+  }
+
+  h2{
+    margin-top:0;
+  }
+
+  input{
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:10px;
+    border:1px solid #ddd;
+    font-size:16px;
+    transition:0.2s;
+  }
+
+  input:focus{
+    border-color:#667eea;
+    outline:none;
+    box-shadow:0 0 0 2px rgba(102,126,234,0.2);
+  }
+
+  button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.2s;
+  }
+
+  #loginBtn, #saveBtn{
+    background:#667eea;
+    color:#fff;
+  }
+
+  #loginBtn:hover, #saveBtn:hover{
+    background:#5a67d8;
+  }
+
+  #logoutBtn{
+    background:#ff6b6b;
+    color:#fff;
+    margin-bottom:15px;
+  }
+
+  #logoutBtn:hover{
+    background:#e55353;
+  }
+
+  .word-card{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px;
+    border-radius:12px;
+    background:#f9f9ff;
+    margin-bottom:10px;
+    transition:0.2s;
+  }
+
+  .word-card:hover{
+    transform:translateY(-2px);
+    box-shadow:0 5px 15px rgba(0,0,0,0.1);
+  }
+
+  .word-text{
+    font-size:18px;
+  }
+
+  .delete-btn{
+    background:#ff6b6b;
+    color:#fff;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+
+  .delete-btn:hover{
+    background:#e55353;
+  }
+
+  .hidden{
+    display:none;
+  }
+
 </style>
 
 </head>
-
 <body>
+
 <div class="wrap">
 
-  <!-- LOGIN -->
-
   <div id="login-view" class="card">
-    <h2>Вход</h2>
+    <h2>🔐 Вход</h2>
     <input id="email" type="text" placeholder="Email">
     <input id="password" type="password" placeholder="Пароль">
     <button id="loginBtn">Войти</button>
     <div id="loginError" style="color:red;"></div>
   </div>
 
-  <!-- APP -->
-
   <div id="app" class="hidden">
 
-```
-<button id="logoutBtn">Выйти</button>
+    <button id="logoutBtn">Выйти</button>
 
-<h2>Добавить слово</h2>
-<input id="word" placeholder="English">
-<input id="translation" placeholder="Перевод">
-<button id="saveBtn">Сохранить</button>
+    <div class="card">
+      <h2>➕ Добавить слово</h2>
+      <input id="word" placeholder="English">
+      <input id="translation" placeholder="Перевод">
+      <button id="saveBtn">Сохранить</button>
+    </div>
 
-<h2>Список</h2>
-<div id="list"></div>
-```
+    <div class="card">
+      <h2>📚 Список слов</h2>
+      <div id="list"></div>
+    </div>
 
   </div>
 
@@ -51,19 +153,9 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-import { 
-  getDatabase, ref, push, onValue, remove 
-} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  onAuthStateChanged,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-
-// CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
   authDomain: "englishwords-d601c.firebaseapp.com",
@@ -71,14 +163,11 @@ const firebaseConfig = {
   projectId: "englishwords-d601c",
 };
 
-// INIT
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-
 const wordsRef = ref(db, 'englishwords');
 
-// DOM
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app');
 
@@ -86,7 +175,6 @@ const emailEl = document.getElementById('email');
 const passEl = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
 const loginError = document.getElementById('loginError');
-
 const logoutBtn = document.getElementById('logoutBtn');
 
 const wordEl = document.getElementById('word');
@@ -94,23 +182,16 @@ const transEl = document.getElementById('translation');
 const saveBtn = document.getElementById('saveBtn');
 const listEl = document.getElementById('list');
 
-// LOGIN
 loginBtn.onclick = async () => {
   try{
-    await signInWithEmailAndPassword(
-      auth,
-      emailEl.value,
-      passEl.value
-    );
+    await signInWithEmailAndPassword(auth,emailEl.value,passEl.value);
   }catch(e){
     loginError.textContent = e.message;
   }
 };
 
-// LOGOUT
 logoutBtn.onclick = () => signOut(auth);
 
-// AUTH STATE
 onAuthStateChanged(auth, user => {
   if(user){
     loginView.classList.add('hidden');
@@ -122,14 +203,9 @@ onAuthStateChanged(auth, user => {
   }
 });
 
-// SAVE WORD
 saveBtn.onclick = async ()=>{
   const user = auth.currentUser;
-
-  if(!user){
-    alert("Не авторизован");
-    return;
-  }
+  if(!user) return;
 
   await push(wordsRef, {
     word: wordEl.value,
@@ -142,24 +218,21 @@ saveBtn.onclick = async ()=>{
   transEl.value='';
 };
 
-// LOAD DATA
 function loadData(user){
   onValue(wordsRef, snapshot=>{
-    listEl.innerHTML = '';
-
+    listEl.innerHTML='';
     const data = snapshot.val();
     if(!data) return;
 
     Object.entries(data).forEach(([id,item])=>{
-      
       if(item.uid !== user.uid) return;
 
       const div = document.createElement('div');
-      div.className="card";
+      div.className='word-card';
 
       div.innerHTML = `
-        <b>${item.word}</b> — ${item.translation}
-        <button onclick="del('${id}')">❌</button>
+        <div class="word-text"><b>${item.word}</b> — ${item.translation}</div>
+        <button class="delete-btn" onclick="del('${id}')">✕</button>
       `;
 
       listEl.appendChild(div);
@@ -167,7 +240,6 @@ function loadData(user){
   });
 }
 
-// DELETE
 window.del = async (id)=>{
   await remove(ref(db,'englishwords/'+id));
 };
