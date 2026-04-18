@@ -7,220 +7,177 @@
 
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:Inter, Arial, sans-serif;
-  background:linear-gradient(135deg,#667eea,#764ba2);
-}
-.wrap{
-  max-width:700px;
-  margin:40px auto;
-  padding:20px;
-}
-.card{
-  background:#fff;
-  padding:20px;
-  border-radius:16px;
-  box-shadow:0 10px 30px rgba(0,0,0,0.15);
-  margin-bottom:20px;
-}
+body{margin:0;font-family:Inter, Arial;background:linear-gradient(135deg,#667eea,#764ba2);} 
+.wrap{max-width:700px;margin:40px auto;padding:20px;}
+.card{background:#fff;padding:20px;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,0.15);margin-bottom:20px;}
 h2{margin-top:0}
-
-input,button{
-  width:100%;
-  padding:12px;
-  margin:8px 0;
-  border-radius:10px;
-  border:1px solid #ddd;
-  font-size:16px;
-}
-
-button{
-  border:none;
-  font-weight:bold;
-  cursor:pointer;
-}
-
+input,button{width:100%;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #ddd;font-size:16px}
+button{border:none;font-weight:bold;cursor:pointer}
 .primary{background:#667eea;color:#fff}
-.primary:hover{background:#5a67d8}
-
 .danger{background:#ff6b6b;color:#fff}
-.danger:hover{background:#e55353}
-
-.menu button{
-  margin-bottom:10px;
-}
-
-.word-card{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:15px;
-  border-radius:12px;
-  background:#f9f9ff;
-  margin-bottom:10px;
-}
-
 .hidden{display:none}
+.word-card{display:flex;justify-content:space-between;align-items:center;padding:15px;border-radius:12px;background:#f9f9ff;margin-bottom:10px}
+.progress{height:10px;background:#eee;border-radius:10px;margin-top:10px;overflow:hidden}
+.progress-bar{height:100%;background:#667eea;width:0%}
 </style>
 </head>
 
 <body>
 <div class="wrap">
 
-<!-- LOGIN -->
 <div id="login-view" class="card">
-  <h2>🔐 Вход</h2>
-  <input id="email" placeholder="Email">
-  <input id="password" type="password" placeholder="Пароль">
-  <button id="loginBtn" class="primary">Войти</button>
-  <div id="loginError" style="color:red"></div>
+<h2>🔐 Вход</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Пароль">
+<button id="loginBtn" class="primary">Войти</button>
+<div id="loginError" style="color:red"></div>
 </div>
 
-<!-- APP -->
 <div id="app" class="hidden">
+<button id="logoutBtn" class="danger">Выйти</button>
 
-  <button id="logoutBtn" class="danger">Выйти</button>
+<div class="card">
+<h2>📱 Меню</h2>
+<button onclick="show('add')">➕ Добавить</button>
+<button onclick="show('list')">📚 Список</button>
+<button onclick="show('train')">🧠 Тренировка</button>
+</div>
 
-  <!-- MENU -->
-  <div id="menu" class="card menu">
-    <h2>📱 Меню</h2>
-    <button onclick="show('add')">➕ Добавить слово</button>
-    <button onclick="show('list')">📚 Список слов</button>
-    <button onclick="show('train')">🧠 Тренировка</button>
-  </div>
+<div id="add" class="card hidden">
+<h2>➕ Добавить</h2>
+<input id="word" placeholder="English">
+<input id="translation" placeholder="Перевод">
+<button id="saveBtn" class="primary">Сохранить</button>
+</div>
 
-  <!-- ADD -->
-  <div id="add" class="card hidden">
-    <h2>➕ Добавить слово</h2>
-    <input id="word" placeholder="English">
-    <input id="translation" placeholder="Перевод">
-    <button id="saveBtn" class="primary">Сохранить</button>
-  </div>
+<div id="listView" class="card hidden">
+<h2>📚 Список</h2>
+<div id="list"></div>
+</div>
 
-  <!-- LIST -->
-  <div id="listView" class="card hidden">
-    <h2>📚 Список слов</h2>
-    <div id="list"></div>
-  </div>
-
-  <!-- TRAIN -->
-  <div id="train" class="card hidden">
-    <h2>🧠 Тренировка</h2>
-    <div id="trainBox">Нажми "начать"</div>
-    <button onclick="startTrain()" class="primary">Начать</button>
-  </div>
+<div id="train" class="card hidden">
+<h2>🧠 Тренировка</h2>
+<div id="cardBox" style="font-size:22px;margin:20px 0"></div>
+<input id="answer" placeholder="Введите перевод">
+<button onclick="checkAnswer()" class="primary">Проверить</button>
+<button onclick="nextCard()">Следующее</button>
+<button onclick="repeatErrors()">Только ошибки</button>
+<div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+<div id="result"></div>
+</div>
 
 </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCwACXrUWvN6hn6uvFcdXFAMmmOLr4Oa8c",
-  authDomain: "englishwords-d601c.firebaseapp.com",
-  databaseURL: "https://englishwords-d601c-default-rtdb.firebaseio.com",
-  projectId: "englishwords-d601c",
-};
+const firebaseConfig = { apiKey:"AIza...", authDomain:"englishwords-d601c.firebaseapp.com", databaseURL:"https://englishwords-d601c-default-rtdb.firebaseio.com", projectId:"englishwords-d601c" };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const wordsRef = ref(db,'englishwords');
 
-const loginView = document.getElementById('login-view');
-const appView = document.getElementById('app');
-const listEl = document.getElementById('list');
+let words=[];
+let errors=[];
+let current=null;
+let correct=0;
+let total=0;
 
-let words = [];
-
-loginBtn.onclick = async ()=>{
-  try{
-    await signInWithEmailAndPassword(auth,email.value,password.value);
-  }catch(e){loginError.textContent=e.message}
+loginBtn.onclick=async()=>{
+try{await signInWithEmailAndPassword(auth,email.value,password.value)}
+catch(e){loginError.textContent=e.message}
 }
-
-logoutBtn.onclick = ()=>signOut(auth);
+logoutBtn.onclick=()=>signOut(auth);
 
 onAuthStateChanged(auth,user=>{
-  if(user){
-    loginView.classList.add('hidden');
-    appView.classList.remove('hidden');
-    loadData(user);
-  }else{
-    loginView.classList.remove('hidden');
-    appView.classList.add('hidden');
-  }
+if(user){loginView.classList.add('hidden');app.classList.remove('hidden');loadData(user)}
+else{loginView.classList.remove('hidden');app.classList.add('hidden')}
 });
 
-function show(view){
-  document.getElementById('add').classList.add('hidden');
-  document.getElementById('listView').classList.add('hidden');
-  document.getElementById('train').classList.add('hidden');
-
-  if(view==='add') document.getElementById('add').classList.remove('hidden');
-  if(view==='list') document.getElementById('listView').classList.remove('hidden');
-  if(view==='train') document.getElementById('train').classList.remove('hidden');
+function show(v){
+add.classList.add('hidden');
+listView.classList.add('hidden');
+train.classList.add('hidden');
+if(v==='add') add.classList.remove('hidden');
+if(v==='list') listView.classList.remove('hidden');
+if(v==='train') train.classList.remove('hidden');
 }
+window.show=show;
 
-saveBtn.onclick = async ()=>{
-  const user = auth.currentUser;
-  if(!user) return;
-
-  await push(wordsRef,{
-    word:word.value,
-    translation:translation.value,
-    uid:user.uid
-  });
-
-  word.value='';
-  translation.value='';
+saveBtn.onclick=async()=>{
+const user=auth.currentUser;
+await push(wordsRef,{word:word.value,translation:translation.value,uid:user.uid,level:0});
+word.value='';translation.value='';
 }
 
 function loadData(user){
-  onValue(wordsRef,snap=>{
-    listEl.innerHTML='';
-    words=[];
-
-    const data=snap.val();
-    if(!data) return;
-
-    Object.entries(data).forEach(([id,item])=>{
-
-      words.push(item);
-
-      const div=document.createElement('div');
-      div.className='word-card';
-      div.innerHTML=`
-        <span><b>${item.word}</b> — ${item.translation}</span>
-        <button onclick="del('${id}')">✕</button>
-      `;
-      listEl.appendChild(div);
-    });
-  });
+onValue(wordsRef,snap=>{
+list.innerHTML='';words=[];
+const data=snap.val(); if(!data) return;
+Object.entries(data).forEach(([id,item])=>{
+if(item.uid && item.uid!==user.uid) return;
+item.id=id;
+words.push(item);
+const div=document.createElement('div');
+div.className='word-card';
+div.innerHTML=`<span><b>${item.word}</b> — ${item.translation}</span><button onclick="del('${id}')">✕</button>`;
+list.appendChild(div);
+});
+});
 }
 
-window.del = id=> remove(ref(db,'englishwords/'+id));
+window.del=id=>remove(ref(db,'englishwords/'+id));
 
-// TRAIN
-function startTrain(){
-  if(words.length===0){
-    trainBox.textContent='Нет слов';
-    return;
-  }
-
-  const w = words[Math.floor(Math.random()*words.length)];
-  trainBox.textContent = w.word + ' → ?';
-
-  setTimeout(()=>{
-    trainBox.textContent = w.word + ' → ' + w.translation;
-  },2000);
+function nextCard(){
+const source = errors.length ? errors : words;
+if(source.length===0) return;
+current = source[Math.floor(Math.random()*source.length)];
+const reverse = Math.random()>0.5;
+current.mode = reverse ? 'ru-en' : 'en-ru';
+cardBox.textContent = reverse ? current.translation : current.word;
+answer.value=''; result.textContent='';
 }
-window.startTrain = startTrain;
-window.show = show;
+
+function checkAnswer(){
+if(!current) return;
+const userAnswer = answer.value.trim().toLowerCase();
+const correctAnswer = current.mode==='ru-en'
+? current.word.toLowerCase()
+: current.translation.toLowerCase();
+
+total++;
+
+if(userAnswer===correctAnswer){
+correct++;
+result.textContent='✅';
+update(ref(db,'englishwords/'+current.id),{level:(current.level||0)+1});
+}else{
+result.textContent='❌ '+correctAnswer;
+errors.push(current);
+}
+
+updateProgress();
+}
+
+function repeatErrors(){
+if(errors.length===0){alert('Нет ошибок');return}
+words = [...errors];
+errors=[];
+nextCard();
+}
+
+function updateProgress(){
+const percent = total ? (correct/total)*100 : 0;
+progressBar.style.width = percent+'%';
+}
+
+window.nextCard=nextCard;
+window.checkAnswer=checkAnswer;
+window.repeatErrors=repeatErrors;
 
 </script>
 </body>
