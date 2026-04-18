@@ -189,7 +189,6 @@ function loadData(user){
     if(!data) return;
 
     Object.entries(data).forEach(([id,item])=>{
-      if(item.uid!==user.uid) return;
 
       words.push(item);
 
