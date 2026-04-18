@@ -10,7 +10,7 @@
 
 body{
   margin:0;
-  font-family:Inter, Arial;
+  font-family:Arial;
   background:linear-gradient(135deg,#667eea,#764ba2);
 }
 
@@ -52,14 +52,10 @@ button{
   justify-content:space-between;
   align-items:center;
   padding:12px;
-  border-radius:12px;
   background:#f7f7ff;
+  border-radius:12px;
   margin-bottom:10px;
   gap:8px;
-}
-
-.word-card span{
-  flex:1;
 }
 
 .small-btn{
@@ -67,14 +63,6 @@ button{
   padding:6px 10px;
   font-size:12px;
   border-radius:8px;
-}
-
-.fav-btn{
-  background:#ddd;
-}
-
-.fav-btn.active{
-  background:#ffd54f;
 }
 
 /* TRAIN */
@@ -86,7 +74,7 @@ button{
 
 #cardBox{
   font-size:26px;
-  font-weight:700;
+  font-weight:bold;
   text-align:center;
   padding:20px;
   background:#f3f4ff;
@@ -95,6 +83,23 @@ button{
   display:flex;
   align-items:center;
   justify-content:center;
+}
+
+/* ⭐ FAVORITE BUTTON */
+.fav-panel{
+  display:flex;
+  justify-content:center;
+}
+
+#favBtn{
+  width:100%;
+  background:#fff;
+  border:2px solid #ffd54f;
+  color:#333;
+}
+
+#favBtn.active{
+  background:#ffd54f;
 }
 
 /* progress */
@@ -123,7 +128,6 @@ button{
 <input id="email" placeholder="Email">
 <input id="password" type="password" placeholder="Пароль">
 <button id="loginBtn" class="primary">Войти</button>
-<div id="loginError" style="color:red"></div>
 </div>
 
 <!-- APP -->
@@ -136,7 +140,7 @@ button{
 <button onclick="show('add')">➕ Добавить</button>
 <button onclick="show('list')">📚 Список</button>
 <button onclick="show('train')">🧠 Тренировка</button>
-<button onclick="show('favtrain')">⭐ Избранное</button>
+<button onclick="show('fav')">⭐ Избранное</button>
 </div>
 
 <!-- ADD -->
@@ -159,6 +163,11 @@ button{
 <h2>🧠 Тренировка</h2>
 
 <div id="cardBox"></div>
+
+<!-- ⭐ ВОТ КНОПКА ИЗБРАННОГО В ТРЕНИРОВКЕ -->
+<div class="fav-panel">
+<button id="favBtn" onclick="toggleFavTrain()">⭐</button>
+</div>
 
 <input id="answer" placeholder="Ответ">
 
@@ -192,42 +201,33 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+
 const wordsRef = ref(db,'englishwords');
 
 /* DOM */
 const loginView = document.getElementById('login-view');
 const appView = document.getElementById('app');
 
-const email = document.getElementById('email');
-const password = document.getElementById('password');
-
-const word = document.getElementById('word');
-const translation = document.getElementById('translation');
-
 const list = document.getElementById('list');
-
 const cardBox = document.getElementById('cardBox');
 const answer = document.getElementById('answer');
 const result = document.getElementById('result');
 const progressBar = document.getElementById('progressBar');
 
-/* STATE */
-let words = [];
-let session = [];
-let index = 0;
-let current = null;
+const favBtn = document.getElementById('favBtn');
 
-let trainMode = 'all';
-let correct = 0;
-let total = 0;
+/* STATE */
+let words=[];
+let session=[];
+let current=null;
+let index=0;
+let correct=0;
+let total=0;
+let mode='all';
 
 /* LOGIN */
 document.getElementById('loginBtn').onclick = async () => {
-  try {
-    await signInWithEmailAndPassword(auth,email.value,password.value);
-  } catch(e){
-    document.getElementById('loginError').textContent = e.message;
-  }
+  await signInWithEmailAndPassword(auth,email.value,password.value);
 };
 
 document.getElementById('logoutBtn').onclick = () => signOut(auth);
@@ -245,9 +245,9 @@ onAuthStateChanged(auth,user=>{
 });
 
 /* NAV */
-window.show = function(v){
+window.show = (v)=>{
   ['add','listView','train'].forEach(id=>{
-    const el = document.getElementById(id);
+    const el=document.getElementById(id);
     if(el) el.classList.add('hidden');
   });
 
@@ -255,21 +255,21 @@ window.show = function(v){
   if(v==='list') document.getElementById('listView').classList.remove('hidden');
 
   if(v==='train'){
-    trainMode='all';
+    mode='all';
     document.getElementById('train').classList.remove('hidden');
-    startSession();
+    start();
   }
 
-  if(v==='favtrain'){
-    trainMode='fav';
+  if(v==='fav'){
+    mode='fav';
     document.getElementById('train').classList.remove('hidden');
-    startSession();
+    start();
   }
 };
 
 /* SAVE */
-document.getElementById('saveBtn').onclick = async () => {
-  const user = auth.currentUser;
+document.getElementById('saveBtn').onclick = async ()=>{
+  const user=auth.currentUser;
 
   await push(wordsRef,{
     word:word.value,
@@ -292,7 +292,7 @@ function loadData(user){
     if(!data) return;
 
     Object.entries(data).forEach(([id,item])=>{
-      if(item.uid && item.uid!==user.uid) return;
+      if(item.uid!==user.uid) return;
 
       item.id=id;
       words.push(item);
@@ -301,15 +301,11 @@ function loadData(user){
       div.className='word-card';
 
       div.innerHTML=`
-        <span><b>${item.word}</b> — ${item.translation}</span>
-
-        <button class="small-btn fav-btn ${item.fav?'active':''}"
+        <span>${item.word} — ${item.translation}</span>
+        <button class="small-btn ${item.fav?'primary':''}"
           onclick="toggleFav('${id}',${item.fav})">
           ⭐
         </button>
-
-        <button class="small-btn danger"
-          onclick="del('${id}')">✕</button>
       `;
 
       list.appendChild(div);
@@ -317,28 +313,41 @@ function loadData(user){
   });
 }
 
-window.del = id => remove(ref(db,'englishwords/'+id));
-
-/* ⭐ TOGGLE FAV */
+/* FAVORITE TOGGLE (LIST) */
 window.toggleFav = async (id,fav)=>{
   await update(ref(db,'englishwords/'+id),{
-    fav: !fav
+    fav:!fav
   });
 };
 
-/* SESSION */
-function startSession(){
+/* TRAIN FAVORITE BUTTON */
+window.toggleFavTrain = async ()=>{
+  if(!current) return;
+
+  await update(ref(db,'englishwords/'+current.id),{
+    fav: !current.fav
+  });
+
+  current.fav = !current.fav;
+  renderFav();
+};
+
+/* START */
+function start(){
   let pool = words;
 
-  if(trainMode==='fav'){
+  if(mode==='fav'){
     pool = words.filter(w=>w.fav);
   }
 
-  session = shuffle([...pool]);
-  index = 0;
+  session = shuffle(pool);
+
+  index=0;
+  correct=0;
+  total=0;
 
   if(session.length===0){
-    cardBox.textContent="Нет слов для тренировки";
+    cardBox.textContent="Нет слов";
     return;
   }
 
@@ -346,61 +355,67 @@ function startSession(){
 }
 
 /* SHUFFLE */
-function shuffle(arr){
-  return arr
-    .map(v=>({v,r:Math.random()}))
-    .sort((a,b)=>a.r-b.r)
-    .map(x=>x.v);
+function shuffle(a){
+  return a.map(v=>({v,r:Math.random()}))
+          .sort((a,b)=>a.r-b.r)
+          .map(x=>x.v);
 }
 
 /* NEXT */
 function nextCard(){
 
   if(index>=session.length){
-    cardBox.textContent="🎉 Тренировка завершена";
+    cardBox.textContent="🏁 Конец тренировки";
     current=null;
     return;
   }
 
   current=session[index++];
 
-  const reverse=Math.random()>0.5;
+  const rev=Math.random()>0.5;
+  current.mode=rev?'ru-en':'en-ru';
 
-  current.mode=reverse?'ru-en':'en-ru';
-
-  cardBox.textContent = reverse
+  cardBox.textContent = rev
     ? current.translation
     : current.word;
 
   answer.value='';
   result.textContent='';
+
+  renderFav();
+}
+
+/* ⭐ update fav button */
+function renderFav(){
+  if(!current) return;
+
+  favBtn.textContent = current.fav ? "⭐ В избранном" : "☆ В избранное";
+  favBtn.classList.toggle('active', current.fav);
 }
 
 /* CHECK */
-function checkAnswer(){
+window.checkAnswer=()=>{
   if(!current) return;
 
-  const user=answer.value.trim().toLowerCase();
+  const u=answer.value.trim().toLowerCase();
 
-  const correctAnswer=
-    current.mode==='ru-en'
-      ? current.word.toLowerCase()
-      : current.translation.toLowerCase();
+  const c=current.mode==='ru-en'
+    ? current.word.toLowerCase()
+    : current.translation.toLowerCase();
 
   total++;
 
-  if(user===correctAnswer){
+  if(u===c){
     correct++;
-    result.textContent='✅';
+    result.textContent="✅";
   } else {
-    result.textContent='❌ '+correctAnswer;
+    result.textContent="❌ "+c;
   }
 
   progressBar.style.width=(correct/total*100)+'%';
-}
+};
 
 window.nextCard=nextCard;
-window.checkAnswer=checkAnswer;
 
 </script>
 
